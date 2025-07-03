@@ -2,9 +2,6 @@ import { config } from 'dotenv';
 
 config();
 
-console.log('ENV KEY length:', process.env.SUPABASE_ANON_KEY?.length || 0);
-console.log('ENV KEY starts with eyJ:', process.env.SUPABASE_ANON_KEY?.startsWith('eyJ'));
-
 export const appConfig = {
   port: parseInt(process.env.PORT || '3000'),
   host: process.env.HOST || 'localhost',

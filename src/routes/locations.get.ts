@@ -30,13 +30,9 @@ const locationsFastifySchema = {
 async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, reply: FastifyReply) {
   try {
 
-    console.log('🔍 Testing Supabase connection...');
-
     // Validate query parameters
     const query = locationsQuerySchema.parse(request.query);
 
-    console.log(supabaseClient)
-    
     // Build Supabase query
     let supabaseQuery = supabaseClient
       .from('locations')
@@ -66,10 +62,7 @@ async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, re
 
     const { data, error } = await supabaseQuery;
 
-    console.log('📊 Supabase response:', { data: data?.length || 0, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error fetching locations:', error);
       return reply.code(500).send({ 
         success: false, 

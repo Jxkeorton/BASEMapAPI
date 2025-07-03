@@ -84,7 +84,6 @@ async function start() {
       port: appConfig.port,
     });
 
-    fastify.log.info(`🚀 Server listening on http://${appConfig.host}:${appConfig.port}`);
     fastify.log.info(`📚 API Documentation available at http://${appConfig.host}:${appConfig.port}/docs`);
     
   } catch (error) {
