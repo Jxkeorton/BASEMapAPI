@@ -80,6 +80,7 @@ async function start() {
     // Add auth routes
     await fastify.register(import('./routes/signIn.post'), { prefix: `/api/${appConfig.api.version}` });
     await fastify.register(import('./routes/signUp.post'), { prefix: `/api/${appConfig.api.version}` });
+     await fastify.register(import('./routes/profile.get'), { prefix: `/api/${appConfig.api.version}` });
 
     // Start server
     await fastify.listen({
