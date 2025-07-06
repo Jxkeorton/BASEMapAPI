@@ -1,6 +1,6 @@
 // src/routes/profile.get.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { supabaseClient } from '../services/supabase';
+import { supabaseAdmin } from '../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../middleware/auth';
 
 const profileFastifySchema = {
@@ -16,10 +16,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     
     console.log('👤 Getting profile for user:', authenticatedRequest.user.id);
 
-    console.log(supabaseClient);
-    
-    // Get user profile from database
-    const { data: profile, error } = await supabaseClient
+    const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', authenticatedRequest.user.id)
