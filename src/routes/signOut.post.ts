@@ -13,8 +13,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     const authenticatedRequest = request as AuthenticatedRequest;
     
     console.log('👋 Signing out user:', authenticatedRequest.user.id);
-
-    console.log(supabaseClient);
     
     // Sign out with Supabase
     const { error } = await supabaseClient.auth.signOut();

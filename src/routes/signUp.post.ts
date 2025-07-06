@@ -31,10 +31,7 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
 
     // Validate request body
     const body = signUpBodySchema.parse(request.body);
-
-    console.log(supabaseClient);
     
-    // Attempt to sign up with Supabase
     const { data, error } = await supabaseClient.auth.signUp({
       email: body.email,
       password: body.password,
