@@ -78,10 +78,11 @@ async function start() {
     await fastify.register(import('./routes/locations.get'), { prefix: `/api/${appConfig.api.version}` });
     
     // Add auth routes
-    await fastify.register(import('./routes/signIn.post'), { prefix: `/api/${appConfig.api.version}` });
-    await fastify.register(import('./routes/signUp.post'), { prefix: `/api/${appConfig.api.version}` });
-    await fastify.register(import('./routes/signOut.post'), { prefix: `/api/${appConfig.api.version}` });
+    await fastify.register(import('./routes/signin.post'), { prefix: `/api/${appConfig.api.version}` });
+    await fastify.register(import('./routes/signup.post'), { prefix: `/api/${appConfig.api.version}` });
+    await fastify.register(import('./routes/signout.post'), { prefix: `/api/${appConfig.api.version}` });
     await fastify.register(import('./routes/refresh.post'), { prefix: `/api/${appConfig.api.version}` });
+    await fastify.register(import('./routes/reset-password.post'), { prefix: `/api/${appConfig.api.version}` });
     await fastify.register(import('./routes/profile.get'), { prefix: `/api/${appConfig.api.version}` });
 
     // Start server
