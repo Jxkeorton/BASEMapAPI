@@ -6,7 +6,6 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { appConfig } from './config';
 
-// Create Fastify instance with Pino logger
 const fastify = Fastify({
   logger: {
     level: appConfig.logging.level,
@@ -77,6 +76,10 @@ async function start() {
 
     // Register routes
     await fastify.register(import('./routes/locations.get'), { prefix: `/api/${appConfig.api.version}` });
+    
+    // Add auth routes
+    await fastify.register(import('./routes/signIn.post'), { prefix: `/api/${appConfig.api.version}` });
+    await fastify.register(import('./routes/signUp.post'), { prefix: `/api/${appConfig.api.version}` });
 
     // Start server
     await fastify.listen({
@@ -84,6 +87,7 @@ async function start() {
       port: appConfig.port,
     });
 
+    fastify.log.info(`🚀 Server listening on http://${appConfig.host}:${appConfig.port}`);
     fastify.log.info(`📚 API Documentation available at http://${appConfig.host}:${appConfig.port}/docs`);
     
   } catch (error) {
