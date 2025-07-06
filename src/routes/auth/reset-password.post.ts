@@ -1,7 +1,7 @@
 // src/routes/reset-password.post.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../services/supabase';
+import { supabaseClient } from '../../services/supabase';
 
 // Simple validation schema - just email
 const resetPasswordBodySchema = z.object({

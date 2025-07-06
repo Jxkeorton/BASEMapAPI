@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { supabaseClient } from '../services/supabase';
-import { authenticateUser, AuthenticatedRequest } from '../middleware/auth';
+import { supabaseClient } from '../../services/supabase';
+import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
 
 const signOutFastifySchema = {
   description: 'Sign out current user',

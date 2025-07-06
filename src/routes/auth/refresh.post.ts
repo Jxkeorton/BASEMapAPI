@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../services/supabase';
+import { supabaseClient } from '../../services/supabase';
 
 const refreshBodySchema = z.object({
   refresh_token: z.string().min(1, 'Refresh token is required'),

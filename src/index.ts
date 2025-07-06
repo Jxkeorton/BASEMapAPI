@@ -74,16 +74,20 @@ async function start() {
       return { status: 'ok', timestamp: new Date().toISOString() };
     });
 
-    // Register routes
-    await fastify.register(import('./routes/locations.get'), { prefix: `/api/${appConfig.api.version}` });
+    const apiPrefix = `/api/${appConfig.api.version}`;
+
+    // Location routes
+    await fastify.register(import('./routes/locations/locations.get'), { prefix: apiPrefix });
     
-    // Add auth routes
-    await fastify.register(import('./routes/signin.post'), { prefix: `/api/${appConfig.api.version}` });
-    await fastify.register(import('./routes/signup.post'), { prefix: `/api/${appConfig.api.version}` });
-    await fastify.register(import('./routes/signout.post'), { prefix: `/api/${appConfig.api.version}` });
-    await fastify.register(import('./routes/refresh.post'), { prefix: `/api/${appConfig.api.version}` });
-    await fastify.register(import('./routes/reset-password.post'), { prefix: `/api/${appConfig.api.version}` });
-    await fastify.register(import('./routes/profile.get'), { prefix: `/api/${appConfig.api.version}` });
+    // Auth routes
+    await fastify.register(import('./routes/auth/signin.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/auth/signup.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/auth/signout.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/auth/refresh.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/auth/reset-password.post'), { prefix: apiPrefix });
+    
+    // Profile routes
+    await fastify.register(import('./routes/profile/profile.get'), { prefix: apiPrefix });
 
     // Start server
     await fastify.listen({
