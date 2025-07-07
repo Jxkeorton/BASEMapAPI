@@ -89,6 +89,10 @@ async function start() {
     // Profile routes
     await fastify.register(import('./routes/profile/profile.get'), { prefix: apiPrefix });
 
+    // Subscription routes
+    await fastify.register(import('./routes/subscriptions/webhook.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/subscriptions/restore.post'), { prefix: apiPrefix });
+
     // Start server
     await fastify.listen({
       host: appConfig.host,
