@@ -78,6 +78,9 @@ async function start() {
 
     // Location routes
     await fastify.register(import('./routes/locations/locations.get'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/locations/save.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/locations/unsave.delete'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/locations/saved.get'), { prefix: apiPrefix });
     
     // Auth routes
     await fastify.register(import('./routes/auth/signin.post'), { prefix: apiPrefix });
