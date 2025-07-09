@@ -1,7 +1,7 @@
 // src/routes/profile.get.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { supabaseAdmin } from '../services/supabase';
-import { authenticateUser, AuthenticatedRequest } from '../middleware/auth';
+import { supabaseAdmin } from '../../services/supabase';
+import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
 
 const profileFastifySchema = {
   description: 'Get current user profile',

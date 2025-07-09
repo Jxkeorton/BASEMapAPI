@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../services/supabase';
+import { supabaseClient } from '../../services/supabase';
 
 // Simple validation schema - just optional filters
 const locationsQuerySchema = z.object({
