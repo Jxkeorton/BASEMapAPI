@@ -97,6 +97,12 @@ async function start() {
     await fastify.register(import('./routes/subscriptions/webhook.post'), { prefix: apiPrefix });
     await fastify.register(import('./routes/subscriptions/restore.post'), { prefix: apiPrefix });
 
+    // Logbook routes
+    await fastify.register(import('./routes/logbook/logbook.post'), {prefix: apiPrefix})
+    await fastify.register(import('./routes/logbook/logbook.patch'), {prefix: apiPrefix})
+    await fastify.register(import('./routes/logbook/logbook.get'), {prefix: apiPrefix})
+    await fastify.register(import('./routes/logbook/logbook.delete'), {prefix: apiPrefix})
+
     // Start server
     await fastify.listen({
       host: appConfig.host,
