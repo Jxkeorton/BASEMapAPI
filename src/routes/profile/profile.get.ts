@@ -1,32 +1,59 @@
-// src/routes/profile.get.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { supabaseAdmin } from '../../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
 
 const profileFastifySchema = {
-  description: 'Get current user profile',
+  description: 'Get current user profile with role information',
   tags: ['auth'],
   security: [{ bearerAuth: [] }],
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' },
+            username: { type: 'string' },
+            role: { type: 'string', enum: ['USER', 'ADMIN', 'SUPERUSER'] },
+            jump_number: { type: 'number' },
+            subscription_status: { type: 'string' },
+            created_at: { type: 'string' },
+            updated_at: { type: 'string' }
+          }
+        }
+      }
+    }
+  }
 };
 
-// Handler function - same pattern as locations/signin
-async function prod(request: FastifyRequest, reply: FastifyReply) {
+async function getProfile(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
     console.log('👤 Getting profile for user:', authenticatedRequest.user.id);
 
+    // Profile should already be attached by authenticateUser middleware
+    if (authenticatedRequest.profile) {
+      console.log('✅ Using cached profile from middleware');
+      return reply.send({
+        success: true,
+        data: authenticatedRequest.profile,
+      });
+    }
+
+    // Fallback: fetch profile if not cached
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', authenticatedRequest.user.id)
       .single();
 
-    console.log('📊 Supabase profile response:', { data: !!profile, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
-      request.log.error('Error fetching profile:', error);
+      console.log('❌ Error fetching profile:', error.message);
       return reply.code(500).send({ 
         success: false, 
         error: 'Failed to fetch profile' 
@@ -40,9 +67,8 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       });
     }
 
-    console.log('✅ Profile retrieved successfully');
+    console.log('✅ Profile retrieved successfully, role:', profile.role);
 
-    // Return simple response
     return reply.send({
       success: true,
       data: profile,
@@ -58,10 +84,9 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
 }
 
 export default async function ProfileGet(fastify: FastifyInstance) {
-  // GET /profile (with authentication)
   fastify.get('/profile', {
     schema: profileFastifySchema,
     preHandler: authenticateUser,
-    handler: prod
+    handler: getProfile
   });
 }
