@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../../services/supabase';
-import { authenticateUser, requireAdmin, AuthenticatedRequest } from '../../../middleware/auth';
+import { authenticateUser, requireAdmin } from '../../../middleware/auth';
 
 const createLocationSchema = z.object({
   name: z.string().min(1, 'Name is required'),

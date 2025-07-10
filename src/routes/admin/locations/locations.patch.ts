@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../../services/supabase';
-import { authenticateUser, requireAdmin, AuthenticatedRequest } from '../../../middleware/auth';
+import { authenticateUser, requireAdmin } from '../../../middleware/auth';
 
 // Validation schemas
 const updateLocationSchema = z.object({

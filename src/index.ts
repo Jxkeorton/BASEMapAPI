@@ -77,7 +77,7 @@ async function start() {
 
     const apiPrefix = `/api/${appConfig.api.version}`;
 
-    await fastify.register(AdminLocationsRoutes);
+    await fastify.register(AdminLocationsRoutes, {prefix: apiPrefix});
 
     // Location routes
     await fastify.register(import('./routes/locations/locations.get'), { prefix: apiPrefix });
