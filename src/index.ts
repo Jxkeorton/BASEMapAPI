@@ -6,6 +6,7 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { appConfig } from './config';
 import AdminLocationsRoutes from './routes/admin/locations';
+import SubmissionRoutes from './routes/submissions';
 
 const fastify = Fastify({
   logger: {
@@ -77,7 +78,11 @@ async function start() {
 
     const apiPrefix = `/api/${appConfig.api.version}`;
 
+    // Admin routes
     await fastify.register(AdminLocationsRoutes, {prefix: apiPrefix});
+
+    // Submission routes
+    await fastify.register(SubmissionRoutes, {prefix: apiPrefix});
 
     // Location routes
     await fastify.register(import('./routes/locations/locations.get'), { prefix: apiPrefix });
