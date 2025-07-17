@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../../services/supabase';
-import { authenticateUser, requireAdmin } from '../../../middleware/auth';
+import { authenticateUser, requireAdmin, AuthenticatedRequest } from '../../../middleware/auth';
 
 // Validation schemas
 const updateLocationSchema = z.object({
@@ -17,7 +17,8 @@ const updateLocationSchema = z.object({
   notes: z.string().optional(),
   opened_by_name: z.string().optional(),
   opened_date: z.string().optional(),
-  video_link: z.string().url().optional().or(z.literal(''))
+  video_link: z.string().url().optional().or(z.literal('')),
+  is_hidden: z.boolean().optional()
 });
 
 const locationParamsSchema = z.object({
@@ -53,7 +54,8 @@ const updateLocationFastifySchema = {
       notes: { type: 'string' },
       opened_by_name: { type: 'string' },
       opened_date: { type: 'string' },
-      video_link: { type: 'string', format: 'uri' }
+      video_link: { type: 'string', format: 'uri' },
+      is_hidden: { type: 'boolean' }
     }
   }
 };
@@ -66,6 +68,7 @@ async function updateLocation(
     const { locationId } = locationParamsSchema.parse(request.params);
     
     console.log(`📍 Admin updating location ${locationId}...`);
+    const authenticatedRequest = request as AuthenticatedRequest;
 
     // Validate request body
     const updateData = updateLocationSchema.parse(request.body);
@@ -95,7 +98,10 @@ async function updateLocation(
     // Update location
     const { data: updatedLocation, error: updateError } = await supabaseAdmin
       .from('locations')
-      .update(updateData)
+            .update({
+        ...updateData,
+        updated_by: authenticatedRequest.user?.id // Set updated_by from authenticated user
+      })
       .eq('id', locationId)
       .select()
       .single();

@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../../services/supabase';
-import { authenticateUser, requireAdmin } from '../../../middleware/auth';
+import { authenticateUser, requireAdmin, AuthenticatedRequest } from '../../../middleware/auth';
 
 const createLocationSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -16,7 +16,8 @@ const createLocationSchema = z.object({
   notes: z.string().optional(),
   opened_by_name: z.string().optional(),
   opened_date: z.string().optional(),
-  video_link: z.string().url().optional().or(z.literal(''))
+  video_link: z.string().url().optional().or(z.literal('')),
+  is_hidden: z.boolean().optional().default(false)
 });
 
 type CreateLocationBody = z.infer<typeof createLocationSchema>;
@@ -41,7 +42,8 @@ const createLocationFastifySchema = {
       notes: { type: 'string' },
       opened_by_name: { type: 'string' },
       opened_date: { type: 'string' },
-      video_link: { type: 'string', format: 'uri' }
+      video_link: { type: 'string', format: 'uri' },
+      is_hidden: { type: 'boolean', default: false }
     }
   }
 };
@@ -53,6 +55,7 @@ async function createLocation(
 ) {
   try {
     console.log('📍 Admin creating new location...');
+    const authenticatedRequest = request as AuthenticatedRequest;
 
     // Validate request body
     const locationData = createLocationSchema.parse(request.body);
@@ -60,7 +63,11 @@ async function createLocation(
     // Insert into database
     const { data: newLocation, error } = await supabaseAdmin
       .from('locations')
-      .insert([locationData])
+      .insert([{
+        ...locationData,
+        created_by: authenticatedRequest.user?.id,
+        updated_by: authenticatedRequest.user?.id 
+      }])
       .select()
       .single();
 
