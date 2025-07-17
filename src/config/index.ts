@@ -6,6 +6,8 @@ export const appConfig = {
   port: parseInt(process.env.PORT || '3000'),
   host: process.env.HOST || 'localhost',
   nodeEnv: process.env.NODE_ENV || 'development',
+
+   apiKey: process.env.API_KEY,
   
   supabase: {
     url: process.env.SUPABASE_URL!,
@@ -29,7 +31,7 @@ export const appConfig = {
 };
 
 // Validate required environment variables
-const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'API_KEY'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {

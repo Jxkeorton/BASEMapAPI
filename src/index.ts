@@ -8,6 +8,7 @@ import { appConfig } from './config';
 import AdminLocationsRoutes from './routes/admin/locations';
 import SubmissionRoutes from './routes/submissions';
 import AdminSubmissionsRoutes from './routes/admin/submissions';
+import { validateApiKey } from './middleware/apiKey';
 
 const fastify = Fastify({
   logger: {
@@ -38,6 +39,18 @@ async function start() {
     await fastify.register(rateLimit, {
       max: appConfig.rateLimit.max,
       timeWindow: appConfig.rateLimit.timeWindow,
+    });
+
+    fastify.addHook('preHandler', async (request, reply) => {
+      if (request.url === '/health') {
+        return;
+      }
+      
+      if (request.url.startsWith('/docs')) {
+        return;
+      }
+      
+      await validateApiKey(request, reply);
     });
 
     // Swagger documentation
