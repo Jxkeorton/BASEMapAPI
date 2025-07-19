@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../../services/supabase';
+import { supabaseAdmin, supabaseClient } from '../../services/supabase';
 
 // Simple validation schema - just optional filters
 const locationsQuerySchema = z.object({
@@ -33,10 +33,14 @@ async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, re
     // Validate query parameters
     const query = locationsQuerySchema.parse(request.query);
 
+    console.log(query)
+
     // Build Supabase query
-    let supabaseQuery = supabaseClient
+    let supabaseQuery = supabaseAdmin
       .from('locations')
       .select('*');
+
+    console.log('supabase query', supabaseQuery)
 
     // Apply filters
     if (query.country) {
@@ -61,6 +65,8 @@ async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, re
     supabaseQuery = supabaseQuery.order('name');
 
     const { data, error } = await supabaseQuery;
+
+    console.log(data)
 
     if (error) {
       request.log.error('Error fetching locations:', error);
