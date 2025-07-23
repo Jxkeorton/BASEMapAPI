@@ -111,6 +111,7 @@ async function start() {
     await fastify.register(import('./routes/auth/signout.post'), { prefix: apiPrefix });
     await fastify.register(import('./routes/auth/refresh.post'), { prefix: apiPrefix });
     await fastify.register(import('./routes/auth/reset-password.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/auth/delete-account.delete'), {prefix: apiPrefix})
     
     // Profile routes
     await fastify.register(import('./routes/profile/profile.get'), { prefix: apiPrefix });
