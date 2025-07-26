@@ -34,7 +34,10 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply:
     
     // Send password reset email via Supabase (no redirect = uses Supabase's default page)
     const { error } = await supabaseClient.auth.resetPasswordForEmail(
-      body.email
+      body.email,
+      {
+        redirectTo: 'basemobileapp://auth//ResetPasswordConfirm'
+      }
     );
 
     console.log('📊 Supabase reset password response:', { error });
