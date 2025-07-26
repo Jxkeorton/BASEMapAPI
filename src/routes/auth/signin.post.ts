@@ -56,6 +56,23 @@ async function prod(request: FastifyRequest<{ Body: SignInBody }>, reply: Fastif
       });
     }
 
+    // In your signin endpoint, add this check:
+    if (!data.user || !data.session) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Sign in failed - no user data returned',
+      });
+    }
+
+    // Check if email is confirmed
+    if (!data.user.email_confirmed_at) {
+      return reply.code(401).send({
+        success: false,
+        error: 'Please confirm your email address before signing in. Check your inbox for a confirmation email.',
+        emailUnconfirmed: true,
+      });
+    }
+
     // Return simple response
     return reply.send({
       success: true,
