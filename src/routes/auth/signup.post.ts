@@ -39,7 +39,7 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
         data: {
           name: body.name || body.email.split('@')[0],
         },
-        emailRedirectTo: 'basemobileapp://auth/EmailConfirmation' 
+        emailRedirectTo: 'basemapapp://auth/EmailConfirmation' 
       },
     });
 
@@ -72,9 +72,6 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
 
     // Check if email confirmation is required
     const requiresConfirmation = !data.session;
-    const message = requiresConfirmation 
-      ? 'Account created successfully! Please check your email to confirm your account.'
-      : 'Account created successfully!';
 
     // Return simple response
     return reply.send({
