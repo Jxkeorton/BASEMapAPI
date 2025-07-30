@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../../services/supabase';
+import { supabaseClient } from '../../../services/supabase';
 
 const confirmEmailBodySchema = z.object({
   token: z.string(),

@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../../services/supabase';
+import { supabaseClient } from '../../../services/supabase';
 
 const resetPasswordBodySchema = z.object({
   email: z.string().email('Invalid email format'),
