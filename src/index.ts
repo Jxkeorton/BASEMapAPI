@@ -9,6 +9,7 @@ import AdminLocationsRoutes from './routes/admin/locations';
 import SubmissionRoutes from './routes/submissions';
 import AdminSubmissionsRoutes from './routes/admin/submissions';
 import { validateApiKey } from './middleware/apiKey';
+import AuthRoutes from './routes/auth';
 
 const fastify = Fastify({
   logger: {
@@ -106,11 +107,7 @@ async function start() {
     await fastify.register(import('./routes/locations/saved.get'), { prefix: apiPrefix });
     
     // Auth routes
-    await fastify.register(import('./routes/auth/signin.post'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/auth/signup.post'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/auth/signout.post'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/auth/refresh.post'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/auth/reset-password.post'), { prefix: apiPrefix });
+    await fastify.register(AuthRoutes, { prefix: apiPrefix });
     
     // Profile routes
     await fastify.register(import('./routes/profile/profile.get'), { prefix: apiPrefix });

@@ -1,9 +1,7 @@
-// src/routes/reset-password.post.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../../services/supabase';
+import { supabaseClient } from '../../../services/supabase';
 
-// Simple validation schema - just email
 const resetPasswordBodySchema = z.object({
   email: z.string().email('Invalid email format'),
 });
@@ -22,7 +20,6 @@ const resetPasswordFastifySchema = {
   }
 };
 
-// Handler function - same pattern as signin
 async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply: FastifyReply) {
   try {
     console.log('🔑 Password reset request for:', request.body.email);
@@ -32,9 +29,11 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply:
 
     console.log(supabaseClient);
     
-    // Send password reset email via Supabase (no redirect = uses Supabase's default page)
     const { error } = await supabaseClient.auth.resetPasswordForEmail(
-      body.email
+      body.email,
+      {
+        redirectTo: 'basemapapp://auth/ResetPasswordConfirm'
+      }
     );
 
     console.log('📊 Supabase reset password response:', { error });
@@ -85,7 +84,6 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply:
 }
 
 export default async function ResetPasswordPost(fastify: FastifyInstance) {
-  // POST /reset-password
   fastify.post<{
     Body: ResetPasswordBody;
   }>('/reset-password', {

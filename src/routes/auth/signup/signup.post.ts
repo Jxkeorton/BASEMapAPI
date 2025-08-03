@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { supabaseClient } from '../../services/supabase';
+import { supabaseClient } from '../../../services/supabase';
 
 const signUpBodySchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -39,6 +39,7 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
         data: {
           name: body.name || body.email.split('@')[0],
         },
+        emailRedirectTo: 'basemapapp://auth/EmailConfirmation' 
       },
     });
 
@@ -71,9 +72,6 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
 
     // Check if email confirmation is required
     const requiresConfirmation = !data.session;
-    const message = requiresConfirmation 
-      ? 'Account created successfully! Please check your email to confirm your account.'
-      : 'Account created successfully!';
 
     // Return simple response
     return reply.send({
@@ -84,12 +82,11 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
           email: data.user.email,
           email_confirmed_at: data.user.email_confirmed_at,
         },
-        session: data.session ? {
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-          expires_at: data.session.expires_at,
-        } : null,
-        message,
+        session: data.session,
+        requiresEmailConfirmation: requiresConfirmation,
+        message: requiresConfirmation 
+          ? 'Account created! Please check your email to confirm your account before signing in.'
+          : 'Account created successfully!',
       },
     });
 
