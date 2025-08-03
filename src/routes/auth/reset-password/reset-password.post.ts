@@ -32,7 +32,7 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply:
     const { error } = await supabaseClient.auth.resetPasswordForEmail(
       body.email,
       {
-        redirectTo: 'basemapapp://auth/ResetPasswordConfirm'
+        redirectTo: 'base.map://'
       }
     );
 

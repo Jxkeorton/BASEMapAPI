@@ -34,7 +34,7 @@ async function resendConfirmation(
       type: 'signup',
       email: body.email,
       options: {
-        emailRedirectTo: 'basemapapp://auth/EmailConfirmation'
+        emailRedirectTo: 'base.map://'
       }
     });
 

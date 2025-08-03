@@ -37,13 +37,11 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
       password: body.password,
       options: {
         data: {
-          name: body.name || body.email.split('@')[0],
+          name: body.name
         },
-        emailRedirectTo: 'basemapapp://auth/EmailConfirmation' 
+        emailRedirectTo: 'base.map://'
       },
     });
-
-    console.log('📊 Supabase auth response:', { data: !!data.user, error });
 
     if (error) {
       console.log('❌ Full error details:', JSON.stringify(error, null, 2));
