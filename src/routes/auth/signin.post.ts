@@ -43,33 +43,27 @@ async function prod(request: FastifyRequest<{ Body: SignInBody }>, reply: Fastif
     if (error) {
       console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error signing in:', error);
+      
+      // Check if it's an email confirmation error using the error code
+      if (error.code === 'email_not_confirmed') {
+        return reply.code(401).send({
+          success: false,
+          error: 'Please confirm your email address before signing in. Check your inbox for a confirmation email.',
+          emailUnconfirmed: true,
+        });
+      }
+
+      if (!data.user || !data.session) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Sign in failed - no user data returned',
+        });
+      }
+      
+      // For all other authentication errors
       return reply.code(401).send({ 
         success: false, 
         error: 'Invalid email or password' 
-      });
-    }
-
-    if (!data.user || !data.session) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Sign in failed - no user data returned',
-      });
-    }
-
-    // In your signin endpoint, add this check:
-    if (!data.user || !data.session) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Sign in failed - no user data returned',
-      });
-    }
-
-    // Check if email is confirmed
-    if (!data.user.email_confirmed_at) {
-      return reply.code(401).send({
-        success: false,
-        error: 'Please confirm your email address before signing in. Check your inbox for a confirmation email.',
-        emailUnconfirmed: true,
       });
     }
 
