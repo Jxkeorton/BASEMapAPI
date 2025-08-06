@@ -3,6 +3,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
+import { LogbookResponseData } from '../../schemas/logbook';
 
 const logbookQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(100).optional().default(50),
@@ -37,17 +38,10 @@ const logbookFastifySchema = {
       type: 'object',
       properties: {
         success: { type: 'boolean' },
-        data: {
-          type: 'object',
-          properties: {
-            entries: { type: 'array' },
-            total_count: { type: 'number' },
-            has_more: { type: 'boolean' },
-          },
-        },
-      },
-    },
-  },
+        data: LogbookResponseData
+      }
+    }
+  }
 };
 
 async function prod(request: FastifyRequest<{ Querystring: LogbookQuery }>, reply: FastifyReply) {

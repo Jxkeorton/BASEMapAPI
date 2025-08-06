@@ -30,8 +30,6 @@ async function deleteLocation(
   try {
     const { locationId } = locationParamsSchema.parse(request.params);
     
-    console.log(`🗑️ Superuser deleting location ${locationId}...`);
-
     // Check if location exists and get its name for logging
     const { data: existingLocation, error: fetchError } = await supabaseAdmin
       .from('locations')
@@ -55,13 +53,10 @@ async function deleteLocation(
 
     if (savedError) {
       console.log('⚠️ Error checking dependencies:', savedError.message);
-      // Continue with deletion - this is just a warning check
     }
 
     if (savedLocations && savedLocations.length > 0) {
       console.log(`⚠️ Warning: Location has ${savedLocations} saved references`);
-      // You might want to prevent deletion or cascade delete based on your business rules
-      // For now, we'll allow it but log the warning
     }
 
     // Delete location

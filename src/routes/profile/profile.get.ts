@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { supabaseAdmin } from '../../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
+import { ProfileResponseData } from '../../schemas/profile';
 
 const profileFastifySchema = {
   description: 'Get current user profile with role information',
@@ -11,20 +12,7 @@ const profileFastifySchema = {
       type: 'object',
       properties: {
         success: { type: 'boolean' },
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            email: { type: 'string' },
-            name: { type: 'string' },
-            username: { type: 'string' },
-            role: { type: 'string', enum: ['USER', 'ADMIN', 'SUPERUSER'] },
-            jump_number: { type: 'number' },
-            subscription_status: { type: 'string' },
-            created_at: { type: 'string' },
-            updated_at: { type: 'string' }
-          }
-        }
+        data: ProfileResponseData
       }
     }
   }

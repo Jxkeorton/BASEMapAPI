@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
+import { SubmissionsResponseData } from '../../schemas/submissions';
 
 const getSubmissionsQuerySchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']).optional(),
@@ -30,14 +31,7 @@ const getSubmissionsFastifySchema = {
       type: 'object',
       properties: {
         success: { type: 'boolean' },
-        data: {
-          type: 'object',
-          properties: {
-            submissions: { type: 'array' },
-            total_count: { type: 'number' },
-            has_more: { type: 'boolean' }
-          }
-        }
+        data: SubmissionsResponseData
       }
     }
   }

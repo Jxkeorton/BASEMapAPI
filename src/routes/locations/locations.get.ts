@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin, supabaseClient } from '../../services/supabase';
+import { LocationsResponseData } from '../../schemas/locations';
 
 // Simple validation schema - just optional filters
 const locationsQuerySchema = z.object({
@@ -23,6 +24,15 @@ const locationsFastifySchema = {
       max_height: { type: 'number', description: 'Maximum height in feet' },
       search: { type: 'string', description: 'Search in name, country, or notes' },
     },
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: LocationsResponseData
+      }
+    }
   }
 };
 
