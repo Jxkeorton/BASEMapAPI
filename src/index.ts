@@ -91,37 +91,35 @@ async function start() {
       return { status: 'ok', timestamp: new Date().toISOString() };
     });
 
-    const apiPrefix = `/api/${appConfig.api.version}`;
-
     // Admin routes
-    await fastify.register(AdminLocationsRoutes, {prefix: apiPrefix});
-    await fastify.register(AdminSubmissionsRoutes, {prefix: apiPrefix});
+    await fastify.register(AdminLocationsRoutes);
+    await fastify.register(AdminSubmissionsRoutes);
 
     // Submission routes
-    await fastify.register(SubmissionRoutes, {prefix: apiPrefix});
+    await fastify.register(SubmissionRoutes);
 
     // Location routes
-    await fastify.register(import('./routes/locations/locations.get'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/locations/save.post'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/locations/unsave.delete'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/locations/saved.get'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/locations/locations.get'));
+    await fastify.register(import('./routes/locations/save.post'));
+    await fastify.register(import('./routes/locations/unsave.delete'));
+    await fastify.register(import('./routes/locations/saved.get'));
     
     // Auth routes
-    await fastify.register(AuthRoutes, { prefix: apiPrefix });
+    await fastify.register(AuthRoutes);
     
     // Profile routes
-    await fastify.register(import('./routes/profile/profile.get'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/profile/profile.patch'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/profile/profile.get'));
+    await fastify.register(import('./routes/profile/profile.patch'));
 
     // Subscription routes
-    await fastify.register(import('./routes/subscriptions/webhook.post'), { prefix: apiPrefix });
-    await fastify.register(import('./routes/subscriptions/restore.post'), { prefix: apiPrefix });
+    await fastify.register(import('./routes/subscriptions/webhook.post'));
+    await fastify.register(import('./routes/subscriptions/restore.post'));
 
     // Logbook routes
-    await fastify.register(import('./routes/logbook/logbook.post'), {prefix: apiPrefix})
-    await fastify.register(import('./routes/logbook/logbook.patch'), {prefix: apiPrefix})
-    await fastify.register(import('./routes/logbook/logbook.get'), {prefix: apiPrefix})
-    await fastify.register(import('./routes/logbook/logbook.delete'), {prefix: apiPrefix})
+    await fastify.register(import('./routes/logbook/logbook.post'))
+    await fastify.register(import('./routes/logbook/logbook.patch'))
+    await fastify.register(import('./routes/logbook/logbook.get'))
+    await fastify.register(import('./routes/logbook/logbook.delete'))
 
     // Start server
     await fastify.listen({
