@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseClient } from '../../../services/supabase';
+import { resetPasswordConfirmFastifySchema } from '../../../schemas/auth/reset-password';
 
 const resetPasswordConfirmBodySchema = z.object({
   access_token: z.string(),
@@ -9,20 +10,6 @@ const resetPasswordConfirmBodySchema = z.object({
 });
 
 type ResetPasswordConfirmBody = z.infer<typeof resetPasswordConfirmBodySchema>;
-
-const resetPasswordConfirmFastifySchema = {
-  description: 'Confirm password reset with new password',
-  tags: ['auth'],
-  body: {
-    type: 'object',
-    required: ['access_token', 'refresh_token', 'new_password'],
-    properties: {
-      access_token: { type: 'string', description: 'Access token from reset email' },
-      refresh_token: { type: 'string', description: 'Refresh token from reset email' },
-      new_password: { type: 'string', minLength: 6, description: 'New password' },
-    },
-  }
-};
 
 async function prod(request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>, reply: FastifyReply) {
   try {
