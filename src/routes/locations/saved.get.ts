@@ -37,12 +37,8 @@ async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('📋 Get saved locations request for user:', authenticatedRequest.user.id);
-
     const query = savedLocationsQuerySchema.parse(request.query);
 
-    console.log(supabaseAdmin);
-    
     // Get saved locations with full location details
     const { data: savedLocations, error } = await supabaseAdmin
       .from('user_saved_locations')
@@ -72,13 +68,7 @@ async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }
       .order('created_at', { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
 
-    console.log('📊 Supabase saved locations response:', { 
-      data: savedLocations?.length || 0, 
-      error 
-    });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error fetching saved locations:', error);
       return reply.code(500).send({
         success: false,
@@ -92,9 +82,9 @@ async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }
       .select('*', { count: 'exact', head: true })
       .eq('user_id', authenticatedRequest.user.id);
 
-    if (countError) {
-      console.log('⚠️ Error getting total count:', countError.message);
-    }
+      if (countError) {
+        request.log.warn('⚠️ Error getting total count:', countError.message);
+      }
 
     // Transform the data to flatten the structure
     const transformedLocations = (savedLocations || []).map(save => ({
@@ -104,8 +94,6 @@ async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }
     }));
 
     const hasMore = (totalCount || 0) > query.offset + query.limit;
-
-    console.log('✅ Returned', transformedLocations.length, 'saved locations');
 
     // Return simple response
     return reply.send({

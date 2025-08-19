@@ -50,8 +50,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('💾 Save location request for user:', authenticatedRequest.user.id);
-
     const body = saveLocationBodySchema.parse(request.body);
 
     // First, check if the location exists
@@ -62,7 +60,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (locationError || !location) {
-      console.log('❌ Location not found:', body.location_id);
       return reply.code(404).send({
         success: false,
         error: 'Location not found',
@@ -78,7 +75,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found (good)
-      console.log('❌ Error checking existing save:', checkError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to check if location is already saved',
@@ -86,7 +82,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     }
 
     if (existingSave) {
-      console.log('⚠️ Location already saved by user');
       return reply.code(400).send({
         success: false,
         error: 'Location is already saved to your favorites',
@@ -103,18 +98,13 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .select('id, location_id, created_at')
       .single();
 
-    console.log('📊 Supabase save location response:', { data: !!savedLocation, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error saving location:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to save location',
       });
     }
-
-    console.log('✅ Location saved successfully:', location.name);
 
     return reply.send({
       success: true,

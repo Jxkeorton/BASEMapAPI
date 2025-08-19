@@ -14,8 +14,6 @@ async function resendConfirmation(
   reply: FastifyReply
 ) {
   try {
-    console.log('📧 Resend confirmation request for:', request.body.email);
-
     // Validate request body
     const body = resendConfirmationBodySchema.parse(request.body);
     
@@ -28,8 +26,6 @@ async function resendConfirmation(
     });
 
     if (error) {
-      console.log('❌ Resend error:', error.message);
-      
       // Handle specific error cases
       if (error.message.includes('Email not confirmed')) {
         return reply.code(400).send({
@@ -50,8 +46,6 @@ async function resendConfirmation(
         error: error.message,
       });
     }
-
-    console.log('✅ Confirmation email resent successfully');
 
     return reply.send({
       success: true,

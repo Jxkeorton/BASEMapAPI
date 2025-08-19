@@ -40,8 +40,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('🔄 Restore subscription request for user:', authenticatedRequest.user.id);
-
     const body = restoreSubscriptionBodySchema.parse(request.body);
     
     // Check if this RevenueCat customer ID is already linked to another user
@@ -53,7 +51,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
-      console.log('❌ Error checking existing RevenueCat customer:', checkError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to verify RevenueCat customer ID',
@@ -61,7 +58,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     }
 
     if (existingUser) {
-      console.log('❌ RevenueCat customer ID already linked to another user:', existingUser.id);
       return reply.code(400).send({
         success: false,
         error: 'This subscription is already linked to another account',
@@ -81,18 +77,13 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .select('id, email, subscription_status, subscription_expires_at, revenuecat_customer_id')
       .single();
 
-    console.log('📊 Supabase profile update response:', { data: !!updatedProfile, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error updating subscription:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to restore subscription',
       });
     }
-
-    console.log('✅ Subscription restored successfully for user:', updatedProfile.id);
 
     // Return simple response
     return reply.send({

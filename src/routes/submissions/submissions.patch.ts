@@ -66,8 +66,6 @@ async function updateSubmission(
     const { id } = request.params;
     const updateData = updateSubmissionSchema.parse(request.body);
 
-    console.log('✏️ User updating submission:', id);
-
     // Check if submission exists and belongs to user and is pending
     const { data: existingSubmission, error: fetchError } = await supabaseAdmin
       .from('location_submission_requests')
@@ -105,7 +103,6 @@ async function updateSubmission(
       .single();
 
     if (updateError) {
-      console.log('❌ Error updating submission:', updateError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to update submission',
@@ -122,7 +119,7 @@ async function updateSubmission(
         .eq('submission_id', id);
 
       if (deleteError) {
-        console.log('⚠️ Warning: Failed to delete old images:', deleteError.message);
+        request.log.error('⚠️ Warning: Failed to delete old images:', deleteError.message);
       }
 
       // Insert new images
@@ -138,14 +135,12 @@ async function updateSubmission(
           .insert(imageRecords);
 
         if (imageError) {
-          console.log('⚠️ Warning: Failed to save new images:', imageError.message);
+          request.log.error('⚠️ Warning: Failed to save new images:', imageError.message);
         } else {
-          console.log('✅ Updated', imageRecords.length, 'images for submission');
+          request.log.info('✅ Updated', imageRecords.length, 'images for submission');
         }
       }
     }
-
-    console.log('✅ Submission updated successfully:', id);
 
     return reply.send({
       success: true,

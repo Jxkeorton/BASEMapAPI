@@ -51,8 +51,6 @@ async function prod(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('✏️ Update logbook entry request for user:', authenticatedRequest.user.id);
-
     const params = updateLogbookEntryParamsSchema.parse(request.params);
     const body = updateLogbookEntryBodySchema.parse(request.body);
 
@@ -65,7 +63,6 @@ async function prod(
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
-      console.log('❌ Error checking existing entry:', checkError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to check logbook entry',
@@ -73,7 +70,6 @@ async function prod(
     }
 
     if (!existingEntry) {
-      console.log('❌ Logbook entry not found or access denied');
       return reply.code(404).send({
         success: false,
         error: 'Logbook entry not found',
@@ -105,18 +101,13 @@ async function prod(
       .select('*')
       .single();
 
-    console.log('📊 Supabase update entry response:', { data: !!updatedEntry, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error updating logbook entry:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to update logbook entry',
       });
     }
-
-    console.log('✅ Logbook entry updated successfully:', existingEntry.location_name);
 
     return reply.send({
       success: true,

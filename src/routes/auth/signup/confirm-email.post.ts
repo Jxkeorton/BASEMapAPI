@@ -23,7 +23,6 @@ async function confirmEmail(
     });
 
     if (error) {
-      console.log('❌ Email confirmation error:', error.message);
       return reply.code(400).send({
         success: false,
         error: 'Invalid or expired confirmation token',
@@ -36,8 +35,6 @@ async function confirmEmail(
         error: 'Confirmation failed',
       });
     }
-
-    console.log('✅ Email confirmed for user:', data.user.id);
 
     return reply.send({
       success: true,

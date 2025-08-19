@@ -42,12 +42,8 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('🗑️ Unsave location request for user:', authenticatedRequest.user.id);
-
     const body = unsaveLocationBodySchema.parse(request.body);
 
-    console.log(supabaseAdmin);
-    
     // Get the location name for response message
     const { data: location, error: locationError } = await supabaseAdmin
       .from('locations')
@@ -56,7 +52,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (locationError || !location) {
-      console.log('❌ Location not found:', body.location_id);
       return reply.code(404).send({
         success: false,
         error: 'Location not found',
@@ -72,26 +67,20 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .select('id')
       .single();
 
-    console.log('📊 Supabase unsave location response:', { data: !!deletedSave, error });
-
     if (error) {
       if (error.code === 'PGRST116') { // No rows found
-        console.log('⚠️ Location was not saved by user');
         return reply.code(404).send({
           success: false,
           error: 'Location is not in your favorites',
         });
       }
 
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error unsaving location:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to remove location from favorites',
       });
     }
-
-    console.log('✅ Location unsaved successfully:', location.name);
 
     return reply.send({
       success: true,

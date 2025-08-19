@@ -13,23 +13,16 @@ type SignInBody = z.infer<typeof signInBodySchema>;
 // Handler function - same pattern as locations
 async function prod(request: FastifyRequest<{ Body: SignInBody }>, reply: FastifyReply) {
   try {
-    console.log('🔐 Sign in attempt for:', request.body.email);
-
     // Validate request body
     const body = signInBodySchema.parse(request.body);
 
-    console.log(body);
-    
     // Attempt to sign in with Supabase
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: body.email,
       password: body.password,
     });
 
-    console.log('📊 Supabase auth response:', { data: !!data.user, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error signing in:', error);
       
       // Check if it's an email confirmation error using the error code

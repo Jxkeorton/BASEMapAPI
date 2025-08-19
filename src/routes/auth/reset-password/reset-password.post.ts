@@ -11,21 +11,14 @@ type ResetPasswordBody = z.infer<typeof resetPasswordBodySchema>;
 
 async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply: FastifyReply) {
   try {
-    console.log('🔑 Password reset request for:', request.body.email);
-
     // Validate request body
     const body = resetPasswordBodySchema.parse(request.body);
 
-    console.log(supabaseClient);
-    
     const { error } = await supabaseClient.auth.resetPasswordForEmail(
       body.email,
     );
 
-    console.log('📊 Supabase reset password response:', { error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error sending reset email:', error);
       return reply.code(400).send({ 
         success: false, 
@@ -33,18 +26,13 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply:
       });
     }
 
-    console.log('📊 Supabase reset password response:', { error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error sending reset email:', error);
       return reply.code(400).send({ 
         success: false, 
         error: error 
       });
     }
-
-    console.log('✅ Password reset email sent successfully');
 
     // Always return success (don't reveal if email exists or not)
     return reply.send({

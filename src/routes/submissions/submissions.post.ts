@@ -82,7 +82,6 @@ async function checkSubmissionLimits(userId: string): Promise<{ canSubmit: boole
     .eq('status', 'pending');
 
   if (pendingError) {
-    console.log('⚠️ Error checking pending submissions:', pendingError.message);
     return { canSubmit: true }; // Allow if we can't check
   }
 
@@ -101,7 +100,6 @@ async function checkSubmissionLimits(userId: string): Promise<{ canSubmit: boole
     .gte('created_at', today.toISOString());
 
   if (todayError) {
-    console.log('⚠️ Error checking daily submissions:', todayError.message);
     return { canSubmit: true }; // Allow if we can't check
   }
 
@@ -122,7 +120,6 @@ async function createSubmission(
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
-    console.log('📍 User submitting location request...', authenticatedRequest.user.id);
 
     // Validate request body
     const submissionData = createSubmissionSchema.parse(request.body);
@@ -186,7 +183,6 @@ async function createSubmission(
       .single();
 
     if (submissionError) {
-      console.log('❌ Error creating submission:', submissionError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to create submission',
@@ -207,14 +203,12 @@ async function createSubmission(
         .insert(imageRecords);
 
       if (imageError) {
-        console.log('⚠️ Warning: Failed to save images:', imageError.message);
+        request.log.error('⚠️ Warning: Failed to save images:', imageError.message);
         // Don't fail the whole request, just log the warning
       } else {
-        console.log('✅ Saved', imageRecords.length, 'images for submission');
+        request.log.info('✅ Saved', imageRecords.length, 'images for submission');
       }
     }
-
-    console.log('✅ Location submission created successfully:', newSubmission.id);
 
     return reply.code(201).send({
       success: true,

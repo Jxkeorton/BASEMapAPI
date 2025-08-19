@@ -14,8 +14,6 @@ type SignUpBody = z.infer<typeof signUpBodySchema>;
 // Handler function - same pattern as signin
 async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: FastifyReply) {
   try {
-    console.log('📝 Sign up attempt for:', request.body.email);
-
     // Validate request body
     const body = signUpBodySchema.parse(request.body);
     
@@ -31,7 +29,6 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
     });
 
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error signing up:', error);
       
       // Handle specific error cases

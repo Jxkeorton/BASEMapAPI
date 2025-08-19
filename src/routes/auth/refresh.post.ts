@@ -11,8 +11,6 @@ type RefreshBody = z.infer<typeof refreshBodySchema>;
 
 async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: FastifyReply) {
   try {
-    console.log('🔄 Token refresh attempt');
-
     // Validate request body
     const body = refreshBodySchema.parse(request.body);
     
@@ -21,10 +19,7 @@ async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: Fasti
       refresh_token: body.refresh_token,
     });
 
-    console.log('📊 Supabase refresh response:', { data: !!data.session, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error refreshing token:', error);
       return reply.code(401).send({ 
         success: false, 
@@ -38,8 +33,6 @@ async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: Fasti
         error: 'Failed to refresh session',
       });
     }
-
-    console.log('✅ Token refresh successful');
 
     return reply.send({
       success: true,

@@ -96,8 +96,6 @@ async function getSubmissions(
   reply: FastifyReply
 ) {
   try {
-    console.log('📋 Admin fetching submissions...');
-    
     // Validate query parameters
     const query = submissionsQuerySchema.parse(request.query);
 
@@ -171,13 +169,7 @@ async function getSubmissions(
 
     const { data: submissions, error } = await supabaseQuery;
 
-    console.log('📊 Supabase submissions response:', { 
-      data: submissions?.length || 0, 
-      error 
-    });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error fetching submissions:', error);
       return reply.code(500).send({
         success: false,
@@ -205,7 +197,7 @@ async function getSubmissions(
     const { count: totalCount, error: countError } = await countQuery;
 
     if (countError) {
-      console.log('⚠️ Error getting total count:', countError.message);
+      request.log.warn({ msg: 'Error getting total count', error: countError.message });
     }
 
     // Get summary statistics
@@ -225,8 +217,6 @@ async function getSubmissions(
     }
 
     const hasMore = (totalCount || 0) > query.offset + query.limit;
-
-    console.log('✅ Returned', submissions?.length || 0, 'submissions');
 
     return reply.send({
       success: true,

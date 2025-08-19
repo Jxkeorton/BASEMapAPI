@@ -19,9 +19,6 @@ export const requireSubscription = async (
         error: 'Authentication required'
       });
     }
-
-    console.log('🔒 Checking subscription for user:', authenticatedRequest.user.id);
-
     // Get user's subscription status from profiles table
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
@@ -30,7 +27,6 @@ export const requireSubscription = async (
       .single();
 
     if (error) {
-      console.log('❌ Error checking subscription status:', error.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to check subscription status'
@@ -38,7 +34,6 @@ export const requireSubscription = async (
     }
 
     if (!profile) {
-      console.log('❌ No profile found for user');
       return reply.code(404).send({
         success: false,
         error: 'User profile not found'
@@ -53,15 +48,7 @@ export const requireSubscription = async (
     const isNotExpired = !profile.subscription_expires_at || 
                         new Date(profile.subscription_expires_at) > new Date();
 
-    console.log('📊 Subscription check:', {
-      status: profile.subscription_status,
-      expires_at: profile.subscription_expires_at,
-      hasActiveSubscription,
-      isNotExpired
-    });
-
     if (!hasActiveSubscription || !isNotExpired) {
-      console.log('❌ Access denied - subscription required');
       return reply.code(403).send({
         success: false,
         error: 'Active subscription required to access this feature',
@@ -70,10 +57,7 @@ export const requireSubscription = async (
       });
     }
 
-    console.log('✅ Subscription verified - access granted');
-
   } catch (error) {
-    console.log('❌ Subscription middleware error:', error);
     request.log.error('Subscription check error:', error);
     return reply.code(500).send({
       success: false,
@@ -96,8 +80,6 @@ export const attachSubscriptionInfo = async (
       return; // Not authenticated, continue without subscription info
     }
 
-    console.log('📋 Attaching subscription info for user:', authenticatedRequest.user.id);
-
     // Get user's subscription status
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
@@ -113,15 +95,12 @@ export const attachSubscriptionInfo = async (
         revenuecat_customer_id: profile.revenuecat_customer_id,
         is_premium: profile.subscription_status === 'active' || profile.subscription_status === 'trial'
       };
-      
-      console.log('✅ Subscription info attached:', {
-        status: profile.subscription_status,
-        is_premium: (authenticatedRequest as any).subscription.is_premium
-      });
+    } else if (error) {
+      request.log.error('Error fetching subscription info:', error);
     }
 
   } catch (error) {
-    console.log('⚠️ Error attaching subscription info (non-blocking):', error);
+    request.log.error('⚠️ Error attaching subscription info (non-blocking):', error);
     // Don't fail the request, just continue without subscription info
   }
 };

@@ -18,13 +18,10 @@ export const authenticateUser = async (
   reply: FastifyReply
 ) => {
   try {
-    console.log('🔐 Authenticating request...');
-
     // Get token from Authorization header
     const authHeader = request.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('❌ Missing or invalid authorization header');
       return reply.code(401).send({
         success: false,
         error: 'Missing or invalid authorization header'
@@ -32,22 +29,15 @@ export const authenticateUser = async (
     }
 
     const token = authHeader.split(' ')[1];
-    console.log('🔍 Token found, verifying with Supabase...');
-    
     // Verify token with Supabase
     const { data: { user }, error } = await supabaseClient.auth.getUser(token);
     
-    console.log('📊 Supabase verification response:', { user: !!user, error });
-    
     if (error || !user) {
-      console.log('❌ Token verification failed:', error?.message);
       return reply.code(401).send({
         success: false,
         error: 'Invalid or expired token'
       });
     }
-
-    console.log('✅ User authenticated:', user.id);
 
     // Get user profile and role
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -57,13 +47,10 @@ export const authenticateUser = async (
       .single();
 
     if (profileError) {
-      console.log('⚠️ Warning: Could not fetch user profile:', profileError.message);
       // Still allow authentication, but without role info
       (request as AuthenticatedRequest).user = user;
       return;
     }
-
-    console.log('👤 User role:', profile.role);
 
     // Attach user, profile, and role to request
     const authenticatedRequest = request as AuthenticatedRequest;
@@ -72,7 +59,6 @@ export const authenticateUser = async (
     authenticatedRequest.userRole = profile.role;
     
   } catch (error) {
-    console.log('❌ Authentication error:', error);
     request.log.error('Authentication error:', error);
     return reply.code(500).send({
       success: false,
@@ -110,8 +96,6 @@ export const requireRole = (requiredRole: UserRole) => {
         requiredRole: requiredRole
       });
     }
-
-    console.log(`✅ Role check passed: ${authenticatedRequest.userRole} >= ${requiredRole}`);
   };
 };
 

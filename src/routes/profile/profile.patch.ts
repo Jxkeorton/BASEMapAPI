@@ -59,16 +59,11 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('📝 Profile update request for user:', authenticatedRequest.user.id);
-
     // Validate request body
     const updates = updateProfileBodySchema.parse(request.body);
 
-    console.log(supabaseAdmin);
-    
     // Check if username is being updated and is already taken
     if (updates.username) {
-      console.log('🔍 Checking if username is available:', updates.username);
       
       const { data: existingUser, error: usernameError } = await supabaseAdmin
         .from('profiles')
@@ -77,10 +72,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
         .neq('id', authenticatedRequest.user.id)
         .single();
 
-      console.log('📊 Username check response:', { data: !!existingUser, error: usernameError?.code });
-
       if (existingUser && !usernameError) {
-        console.log('❌ Username already taken:', updates.username);
         return reply.code(400).send({
           success: false,
           error: 'Username already taken',
@@ -88,7 +80,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       }
 
       if (usernameError && usernameError.code !== 'PGRST116') {
-        console.log('❌ Error checking username:', usernameError.message);
         return reply.code(500).send({
           success: false,
           error: 'Failed to verify username availability',
@@ -107,18 +98,13 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .select('id, email, name, username, jump_number, updated_at')
       .single();
 
-    console.log('📊 Supabase profile update response:', { data: !!updatedProfile, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error updating profile:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to update profile',
       });
     }
-
-    console.log('✅ Profile updated successfully');
 
     // Return simple response
     return reply.send({
@@ -144,7 +130,6 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
 }
 
 export default async function ProfilePatch(fastify: FastifyInstance) {
-  // PATCH /profile
   fastify.patch<{
     Body: UpdateProfileBody;
   }>('/profile', {

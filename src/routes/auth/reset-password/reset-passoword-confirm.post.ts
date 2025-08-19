@@ -13,8 +13,6 @@ type ResetPasswordConfirmBody = z.infer<typeof resetPasswordConfirmBodySchema>;
 
 async function prod(request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>, reply: FastifyReply) {
   try {
-    console.log('🔑 Password reset confirmation request');
-
     // Validate request body
     const body = resetPasswordConfirmBodySchema.parse(request.body);
 
@@ -25,14 +23,11 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>,
     });
 
     if (sessionError || !sessionData.user) {
-      console.log('❌ Invalid or expired reset tokens:', sessionError?.message);
       return reply.code(400).send({
         success: false,
         error: 'Invalid or expired reset tokens',
       });
     }
-
-    console.log('✅ Reset tokens validated for user:', sessionData.user.id);
 
     // Update the user's password
     const { error: updateError } = await supabaseClient.auth.updateUser({
@@ -40,14 +35,11 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>,
     });
 
     if (updateError) {
-      console.log('❌ Error updating password:', updateError.message);
       return reply.code(400).send({
         success: false,
         error: updateError.message,
       });
     }
-
-    console.log('✅ Password updated successfully for user:', sessionData.user.id);
 
     // Return success response
     return reply.send({

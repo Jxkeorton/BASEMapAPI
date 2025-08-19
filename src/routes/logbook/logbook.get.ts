@@ -48,8 +48,6 @@ async function prod(request: FastifyRequest<{ Querystring: LogbookQuery }>, repl
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('📋 Get logbook entries request for user:', authenticatedRequest.user.id);
-
     const query = logbookQuerySchema.parse(request.query);
 
     // Build Supabase query
@@ -85,13 +83,7 @@ async function prod(request: FastifyRequest<{ Querystring: LogbookQuery }>, repl
 
     const { data: entries, error } = await supabaseQuery;
 
-    console.log('📊 Supabase logbook entries response:', { 
-      data: entries?.length || 0, 
-      error 
-    });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error fetching logbook entries:', error);
       return reply.code(500).send({
         success: false,
@@ -106,12 +98,10 @@ async function prod(request: FastifyRequest<{ Querystring: LogbookQuery }>, repl
       .eq('user_id', authenticatedRequest.user.id);
 
     if (countError) {
-      console.log('⚠️ Error getting total count:', countError.message);
+      request.log.error('⚠️ Error getting total count:', countError.message);
     }
 
     const hasMore = (totalCount || 0) > query.offset + query.limit;
-
-    console.log('✅ Returned', entries?.length || 0, 'logbook entries');
 
     return reply.send({
       success: true,

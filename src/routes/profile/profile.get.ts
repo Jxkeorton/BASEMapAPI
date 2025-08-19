@@ -22,11 +22,8 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('👤 Getting profile for user:', authenticatedRequest.user.id);
-
     // Profile should already be attached by authenticateUser middleware
     if (authenticatedRequest.profile) {
-      console.log('✅ Using cached profile from middleware');
       return reply.send({
         success: true,
         data: authenticatedRequest.profile,
@@ -41,7 +38,6 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (error) {
-      console.log('❌ Error fetching profile:', error.message);
       return reply.code(500).send({ 
         success: false, 
         error: 'Failed to fetch profile' 
@@ -54,8 +50,6 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
         error: 'Profile not found',
       });
     }
-
-    console.log('✅ Profile retrieved successfully, role:', profile.role);
 
     return reply.send({
       success: true,

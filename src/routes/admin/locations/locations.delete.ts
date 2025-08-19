@@ -52,11 +52,11 @@ async function deleteLocation(
       .eq('location_id', locationId);
 
     if (savedError) {
-      console.log('⚠️ Error checking dependencies:', savedError.message);
+      request.log.warn('Error checking dependencies:', savedError);
     }
 
     if (savedLocations && savedLocations.length > 0) {
-      console.log(`⚠️ Warning: Location has ${savedLocations} saved references`);
+      request.log.warn(`Warning: Location has ${savedLocations.length} saved references`);
     }
 
     // Delete location
@@ -66,15 +66,12 @@ async function deleteLocation(
       .eq('id', locationId);
 
     if (deleteError) {
-      console.log('❌ Error deleting location:', deleteError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to delete location',
         details: deleteError.message
       });
     }
-
-    console.log('✅ Location deleted successfully:', existingLocation.name);
 
     return reply.send({
       success: true,

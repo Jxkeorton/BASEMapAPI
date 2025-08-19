@@ -1,29 +1,20 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { supabaseClient } from '../../services/supabase';
-import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
+import { authenticateUser } from '../../middleware/auth';
 import { signOutFastifySchema } from '../../schemas/auth/signout';
 
 async function prod(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const authenticatedRequest = request as AuthenticatedRequest;
-    
-    console.log('👋 Signing out user:', authenticatedRequest.user.id);
-    
     // Sign out with Supabase
     const { error } = await supabaseClient.auth.signOut();
 
-    console.log('📊 Supabase signout response:', { error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error signing out:', error);
       return reply.code(500).send({ 
         success: false, 
         error: 'Sign out failed' 
       });
     }
-
-    console.log('✅ Sign out successful');
 
     // Return simple response
     return reply.send({

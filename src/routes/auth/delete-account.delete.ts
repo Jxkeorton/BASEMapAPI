@@ -26,14 +26,6 @@ async function verifyUserIdentity(
     const hasEmailPassword = userIdentities.some(identity => identity.provider === 'email');
     const hasOAuthOnly = userIdentities.length > 0 && !hasEmailPassword;
 
-    console.log('🔍 User identity analysis:', {
-      userId: user.id,
-      totalIdentities: userIdentities.length,
-      hasEmailPassword,
-      hasOAuthOnly,
-      providers: userIdentities.map(i => i.provider)
-    });
-
     // Method 1: Password verification (for email/password users)
     if (hasEmailPassword && password) {
       const { error: passwordError } = await supabaseAdmin.auth.signInWithPassword({
@@ -51,7 +43,6 @@ async function verifyUserIdentity(
     // Method 2: Trusted session verification (for OAuth users)
     if (hasOAuthOnly && !password) {
       // For OAuth users, we rely on the fact that they have a valid, recent session
-      console.log('⚠️ OAuth user - using trusted session verification');
       return { success: true, method: 'trusted_session' };
     }
 
@@ -74,7 +65,6 @@ async function verifyUserIdentity(
     return { success: false, error: 'Unable to verify user identity' };
 
   } catch (error) {
-    console.error('Error in verifyUserIdentity:', error);
     return { success: false, error: 'Identity verification failed' };
   }
 }
@@ -95,14 +85,11 @@ async function deleteAccount(
     const authenticatedRequest = request as AuthenticatedRequest;
     const userId = authenticatedRequest.user.id;
     
-    console.log('🗑️ Account deletion request for user:', userId);
-
     // Validate request body
     const body = deleteAccountBodySchema.parse(request.body);
 
     // Check confirmation text
     if (body.confirmation.toUpperCase() !== 'DELETE') {
-      console.log('❌ Invalid confirmation text:', body.confirmation);
       return reply.code(400).send({
         success: false,
         error: 'Confirmation must be "DELETE" to proceed with account deletion',
@@ -113,14 +100,11 @@ async function deleteAccount(
     const identityVerified = await verifyUserIdentity(authenticatedRequest.user, body.password, body.verification_method);
     
     if (!identityVerified.success) {
-      console.log('❌ Identity verification failed:', identityVerified.error);
       return reply.code(401).send({
         success: false,
         error: identityVerified.error,
       });
     }
-
-    console.log('✅ Identity verified via:', identityVerified.method);
 
     // Get user profile for logging purposes
     const { data: profile } = await supabaseAdmin
@@ -129,39 +113,29 @@ async function deleteAccount(
       .eq('id', userId)
       .single();
 
-    console.log('👤 Deleting account for:', profile?.username || profile?.email);
-
     // Delete user profile (this will cascade to related data due to foreign keys)
     // Service role bypasses RLS policies automatically
-    console.log('🗑️ Deleting profile and cascading related data...');
     const { error: profileDeleteError } = await supabaseAdmin
       .from('profiles')
       .delete()
       .eq('id', userId);
 
     if (profileDeleteError) {
-      console.log('❌ Error deleting profile:', profileDeleteError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to delete account data. Please try again or contact support.',
       });
     }
 
-    console.log('✅ Profile deleted, related data cascaded via foreign keys');
-
     // Delete from Supabase Auth (final step)
-    console.log('🗑️ Deleting user from Supabase Auth...');
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {
-      console.log('❌ Error deleting auth user:', authDeleteError.message);
       return reply.code(500).send({
         success: false,
         error: 'Account data deleted but authentication cleanup failed. Please contact support.',
       });
     }
-
-    console.log('✅ Account fully deleted:', profile?.username || profile?.email);
 
     return reply.send({
       success: true,
@@ -177,7 +151,6 @@ async function deleteAccount(
       });
     }
 
-    console.log('❌ Unexpected error during account deletion:', error);
     request.log.error('Error in account deletion endpoint:', error);
     return reply.code(500).send({
       success: false,

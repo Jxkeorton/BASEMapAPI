@@ -55,8 +55,6 @@ async function prod(request: FastifyRequest<{ Body: CreateLogbookEntryBody }>, r
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('📝 Create logbook entry request for user:', authenticatedRequest.user.id);
-
     const body = createLogbookEntryBodySchema.parse(request.body);
 
     // Create the logbook entry
@@ -73,18 +71,13 @@ async function prod(request: FastifyRequest<{ Body: CreateLogbookEntryBody }>, r
       .select('*')
       .single();
 
-    console.log('📊 Supabase create entry response:', { data: !!newEntry, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error creating logbook entry:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to create logbook entry',
       });
     }
-
-    console.log('✅ Logbook entry created successfully:', newEntry.id);
 
     return reply.code(201).send({
       success: true,

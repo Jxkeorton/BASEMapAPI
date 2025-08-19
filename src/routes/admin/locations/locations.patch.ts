@@ -67,7 +67,6 @@ async function updateLocation(
   try {
     const { locationId } = locationParamsSchema.parse(request.params);
     
-    console.log(`📍 Admin updating location ${locationId}...`);
     const authenticatedRequest = request as AuthenticatedRequest;
 
     // Validate request body
@@ -107,15 +106,12 @@ async function updateLocation(
       .single();
 
     if (updateError) {
-      console.log('❌ Error updating location:', updateError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to update location',
         details: updateError.message
       });
     }
-
-    console.log('✅ Location updated successfully:', updatedLocation.name);
 
     return reply.send({
       success: true,

@@ -54,7 +54,6 @@ async function createLocation(
   reply: FastifyReply
 ) {
   try {
-    console.log('📍 Admin creating new location...');
     const authenticatedRequest = request as AuthenticatedRequest;
 
     // Validate request body
@@ -72,15 +71,12 @@ async function createLocation(
       .single();
 
     if (error) {
-      console.log('❌ Error creating location:', error.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to create location',
         details: error.message
       });
     }
-
-    console.log('✅ Location created successfully:', newLocation.name);
 
     return reply.code(201).send({
       success: true,

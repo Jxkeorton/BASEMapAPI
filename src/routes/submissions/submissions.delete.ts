@@ -32,8 +32,6 @@ async function deleteSubmission(
     const authenticatedRequest = request as AuthenticatedRequest;
     const { id } = request.params;
 
-    console.log('🗑️ User deleting submission:', id);
-
     // Check if submission exists and belongs to user and is pending
     const { data: existingSubmission, error: fetchError } = await supabaseAdmin
       .from('location_submission_requests')
@@ -57,15 +55,12 @@ async function deleteSubmission(
       .eq('id', id);
 
     if (deleteError) {
-      console.log('❌ Error deleting submission:', deleteError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to delete submission',
         details: deleteError.message
       });
     }
-
-    console.log('✅ Submission deleted successfully:', id);
 
     return reply.send({
       success: true,

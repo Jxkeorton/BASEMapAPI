@@ -50,8 +50,6 @@ const webhookFastifySchema = {
 
 async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, reply: FastifyReply) {
   try {
-    console.log('🎣 RevenueCat webhook received:', request.body.event.type);
-
     // Validate request body
     const body = revenueCatWebhookSchema.parse(request.body);
     const { event } = body;
@@ -68,7 +66,6 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
-        console.log(`✅ Subscription activated: ${subscriptionStatus}`);
         break;
 
       case 'CANCELLATION':
@@ -77,7 +74,6 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
-        console.log('⚠️ Subscription cancelled (still active until expiry)');
         break;
 
       case 'EXPIRATION':
@@ -85,7 +81,6 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
-        console.log('❌ Subscription expired');
         break;
 
       case 'UNCANCELLATION':
@@ -93,11 +88,9 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
-        console.log('🔄 Subscription reactivated');
         break;
 
       default:
-        console.log(`📝 Unhandled webhook event type: ${event.type}`);
         return reply.send({
           success: true,
           message: 'Event type not processed',
@@ -117,18 +110,13 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
       .select('id, email')
       .single();
 
-    console.log('📊 Supabase profile update response:', { data: !!updatedProfile, error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error updating subscription from webhook:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to update subscription',
       });
     }
-
-    console.log('✅ Subscription updated from webhook for user:', updatedProfile?.id);
 
     // Return simple response
     return reply.send({

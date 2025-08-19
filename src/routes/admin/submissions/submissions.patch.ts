@@ -108,8 +108,6 @@ async function reviewSubmission(
     const { submissionId } = submissionParamsSchema.parse(request.params);
     const reviewData = reviewSubmissionSchema.parse(request.body);
     
-    console.log(`📋 Admin reviewing submission ${submissionId}...`);
-
     // First, get the submission with all related data
     const { data: submission, error: fetchError } = await supabaseAdmin
       .from('location_submission_requests')
@@ -175,7 +173,6 @@ async function reviewSubmission(
           .single();
 
         if (createError) {
-          console.log('❌ Error creating location:', createError.message);
           return reply.code(500).send({
             success: false,
             error: 'Failed to create location',
@@ -184,7 +181,6 @@ async function reviewSubmission(
         }
 
         createdLocation = newLocation;
-        console.log('✅ Created new location:', newLocation.name);
 
       } else if (submission.submission_type === 'update' && submission.existing_location_id) {
         // Update existing location
@@ -196,7 +192,6 @@ async function reviewSubmission(
           .single();
 
         if (updateError) {
-          console.log('❌ Error updating location:', updateError.message);
           return reply.code(500).send({
             success: false,
             error: 'Failed to update location',
@@ -205,7 +200,6 @@ async function reviewSubmission(
         }
 
         updatedLocation = updated;
-        console.log('✅ Updated existing location:', updated.name);
       }
     }
 
@@ -235,7 +229,6 @@ async function reviewSubmission(
       .single();
 
     if (updateError) {
-      console.log('❌ Error updating submission:', updateError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to update submission',
@@ -246,8 +239,6 @@ async function reviewSubmission(
     const message = reviewData.status === 'approved' 
       ? `Submission approved${createdLocation ? ' and location created' : updatedLocation ? ' and location updated' : ''}`
       : 'Submission rejected';
-
-    console.log(`✅ ${message} for submission ${submissionId}`);
 
     return reply.send({
       success: true,

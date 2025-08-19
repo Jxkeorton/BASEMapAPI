@@ -35,8 +35,6 @@ async function getSubmissionLimits(
     const authenticatedRequest = request as AuthenticatedRequest;
     const userId = authenticatedRequest.user.id;
     
-    console.log('📊 Getting submission limits for:', userId);
-
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrow = new Date(today);
@@ -50,7 +48,6 @@ async function getSubmissionLimits(
       .eq('status', 'pending');
 
     if (pendingError) {
-      console.log('❌ Error checking pending submissions:', pendingError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to check submission limits'
@@ -65,7 +62,6 @@ async function getSubmissionLimits(
       .gte('created_at', today.toISOString());
 
     if (todayError) {
-      console.log('❌ Error checking daily submissions:', todayError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to check submission limits'

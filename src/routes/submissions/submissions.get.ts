@@ -45,8 +45,6 @@ async function getUserSubmissions(
     const authenticatedRequest = request as AuthenticatedRequest;
     const query = getSubmissionsQuerySchema.parse(request.query);
 
-    console.log('📋 Getting user submissions for:', authenticatedRequest.user.id);
-
     // Build query
     let supabaseQuery = supabaseAdmin
       .from('location_submission_requests')
@@ -71,7 +69,6 @@ async function getUserSubmissions(
     const { data: submissions, error } = await supabaseQuery;
 
     if (error) {
-      console.log('❌ Error fetching submissions:', error.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch submissions'
@@ -90,7 +87,7 @@ async function getUserSubmissions(
     const { count, error: countError } = await countQuery;
 
     if (countError) {
-      console.log('⚠️ Error getting total count:', countError.message);
+      request.log.error('⚠️ Error getting total count:', countError.message);
     }
 
     // Transform data to flatten structure and sort images
@@ -106,8 +103,6 @@ async function getUserSubmissions(
     }));
 
     const hasMore = (count || 0) > query.offset + query.limit;
-
-    console.log('✅ Returned', transformedSubmissions.length, 'submissions');
 
     return reply.send({
       success: true,

@@ -38,8 +38,6 @@ async function prod(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     
-    console.log('🗑️ Delete logbook entry request for user:', authenticatedRequest.user.id);
-
     const params = deleteLogbookEntryParamsSchema.parse(request.params);
 
     // Check if entry exists and belongs to user
@@ -51,7 +49,6 @@ async function prod(
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
-      console.log('❌ Error checking existing entry:', checkError.message);
       return reply.code(500).send({
         success: false,
         error: 'Failed to check logbook entry',
@@ -59,7 +56,6 @@ async function prod(
     }
 
     if (!existingEntry) {
-      console.log('❌ Logbook entry not found or access denied');
       return reply.code(404).send({
         success: false,
         error: 'Logbook entry not found',
@@ -73,18 +69,13 @@ async function prod(
       .eq('id', params.id)
       .eq('user_id', authenticatedRequest.user.id);
 
-    console.log('📊 Supabase delete entry response:', { error });
-
     if (error) {
-      console.log('❌ Full error details:', JSON.stringify(error, null, 2));
       request.log.error('Error deleting logbook entry:', error);
       return reply.code(500).send({
         success: false,
         error: 'Failed to delete logbook entry',
       });
     }
-
-    console.log('✅ Logbook entry deleted successfully:', existingEntry.location_name);
 
     return reply.send({
       success: true,
