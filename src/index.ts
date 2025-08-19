@@ -10,6 +10,7 @@ import SubmissionRoutes from './routes/submissions';
 import AdminSubmissionsRoutes from './routes/admin/submissions';
 import { validateApiKey } from './middleware/apiKey';
 import AuthRoutes from './routes/auth';
+import errorHandlerPlugin from './plugins/errorHandler';
 
 const fastify = Fastify({
   logger: {
@@ -31,7 +32,8 @@ async function start() {
   try {
     // Register plugins
     await fastify.register(helmet);
-    
+    await fastify.register(errorHandlerPlugin);
+
     await fastify.register(cors, {
       origin: appConfig.api.corsOrigin,
       credentials: true,
