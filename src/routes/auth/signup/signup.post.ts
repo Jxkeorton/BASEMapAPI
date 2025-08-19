@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { signUpFastifySchema } from '../../../schemas/auth/signUp';
 import { supabaseClient } from '../../../services/supabase';
 
 const signUpBodySchema = z.object({
@@ -9,61 +10,6 @@ const signUpBodySchema = z.object({
 });
 
 type SignUpBody = z.infer<typeof signUpBodySchema>;
-
-const signUpFastifySchema = {
-  description: 'Sign up with email and password',
-  tags: ['auth'],
-  body: {
-    type: 'object',
-    required: ['email', 'password'],
-    properties: {
-      email: { type: 'string', format: 'email', description: 'User email' },
-      password: { type: 'string', minLength: 6, description: 'User password' },
-      name: { type: 'string', minLength: 1, description: 'User display name' },
-    },
-  },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        data: {
-          type: 'object',
-          properties: {
-            user: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                email: { type: 'string', format: 'email' },
-                email_confirmed_at: { type: ['string', 'null'], description: 'Email confirmation timestamp or null' },
-              },
-            },
-            session: { type: ['object', 'null'], description: 'Session object or null' },
-            requiresEmailConfirmation: { type: 'boolean' },
-            message: { type: 'string' },
-          },
-        },
-      },
-    },
-    400: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-        details: { type: 'array', items: { type: 'object' }, nullable: true },
-      },
-      required: ['success', 'error'],
-    },
-    500: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-      required: ['success', 'error'],
-    },
-  },
-};
 
 // Handler function - same pattern as signin
 async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: FastifyReply) {

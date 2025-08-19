@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseClient } from '../../../services/supabase';
+import { resendConfirmationFastifySchema } from '../../../schemas/auth/resend-confirmation';
 
 const resendConfirmationBodySchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -8,20 +9,8 @@ const resendConfirmationBodySchema = z.object({
 
 type ResendConfirmationBody = z.infer<typeof resendConfirmationBodySchema>;
 
-const resendConfirmationFastifySchema = {
-  description: 'Resend email confirmation',
-  tags: ['auth'],
-  body: {
-    type: 'object',
-    required: ['email'],
-    properties: {
-      email: { type: 'string', format: 'email', description: 'User email' },
-    },
-  }
-};
-
 async function resendConfirmation(
-  request: FastifyRequest<{ Body: ResendConfirmationBody }>, 
+  request: FastifyRequest<{ Body: ResendConfirmationBody }>,
   reply: FastifyReply
 ) {
   try {

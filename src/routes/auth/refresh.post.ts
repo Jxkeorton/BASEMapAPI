@@ -1,24 +1,13 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseClient } from '../../services/supabase';
+import { refreshFastifySchema } from '../../schemas/auth/refresh';
 
 const refreshBodySchema = z.object({
   refresh_token: z.string().min(1, 'Refresh token is required'),
 });
 
 type RefreshBody = z.infer<typeof refreshBodySchema>;
-
-const refreshFastifySchema = {
-  description: 'Refresh access token using refresh token',
-  tags: ['auth'],
-  body: {
-    type: 'object',
-    required: ['refresh_token'],
-    properties: {
-      refresh_token: { type: 'string', description: 'Refresh token from signin' },
-    },
-  }
-};
 
 async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: FastifyReply) {
   try {
@@ -81,7 +70,6 @@ async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: Fasti
 }
 
 export default async function RefreshPost(fastify: FastifyInstance) {
-  // POST /refresh
   fastify.post<{
     Body: RefreshBody;
   }>('/refresh', {

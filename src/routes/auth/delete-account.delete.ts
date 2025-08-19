@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '../../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
 import { User } from '@supabase/supabase-js';
+import { deleteAccountFastifySchema } from '../../schemas/auth/delete';
 
 /**
  * Verify user identity based on their authentication method
@@ -86,55 +87,6 @@ const deleteAccountBodySchema = z.object({
 
 type DeleteAccountBody = z.infer<typeof deleteAccountBodySchema>;
 
-const deleteAccountFastifySchema = {
-  description: 'Delete user account and all associated data',
-  tags: ['profile'],
-  security: [{ bearerAuth: [] }],
-  body: {
-    type: 'object',
-    required: ['confirmation'],
-    properties: {
-      confirmation: { 
-        type: 'string', 
-        description: 'Must contain "DELETE" to confirm account deletion' 
-      },
-      password: { 
-        type: 'string', 
-        minLength: 6, 
-        description: 'Password for verification (required for email/password users)' 
-      },
-      verification_method: {
-        type: 'string',
-        enum: ['password', 'reauthentication', 'trusted_session'],
-        description: 'Method used to verify user identity'
-      }
-    },
-  },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-      },
-    },
-    400: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-    },
-    401: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-    },
-  },
-};
-
 async function deleteAccount(
   request: FastifyRequest<{ Body: DeleteAccountBody }>, 
   reply: FastifyReply
@@ -142,7 +94,6 @@ async function deleteAccount(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const userId = authenticatedRequest.user.id;
-    const userEmail = authenticatedRequest.user.email!;
     
     console.log('🗑️ Account deletion request for user:', userId);
 

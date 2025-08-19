@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseClient } from '../../../services/supabase';
+import { confirmEmailFastifySchema } from '../../../schemas/auth/confirm-email';
 
 const confirmEmailBodySchema = z.object({
   token: z.string(),
@@ -66,18 +67,7 @@ async function confirmEmail(
 
 export default async function ConfirmEmailPost(fastify: FastifyInstance) {
   fastify.post('/confirm-email', {
-    schema: {
-      description: 'Confirm email address',
-      tags: ['auth'],
-      body: {
-        type: 'object',
-        required: ['token', 'type'],
-        properties: {
-          token: { type: 'string' },
-          type: { type: 'string', enum: ['signup', 'recovery', 'email_change'] },
-        },
-      },
-    },
+    schema: confirmEmailFastifySchema,
     handler: confirmEmail,
   });
 }

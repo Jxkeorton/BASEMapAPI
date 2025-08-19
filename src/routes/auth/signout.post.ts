@@ -1,12 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { supabaseClient } from '../../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
-
-const signOutFastifySchema = {
-  description: 'Sign out current user',
-  tags: ['auth'],
-  security: [{ bearerAuth: [] }],
-};
+import { signOutFastifySchema } from '../../schemas/auth/signout';
 
 async function prod(request: FastifyRequest, reply: FastifyReply) {
   try {
