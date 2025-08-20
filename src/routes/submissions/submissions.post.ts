@@ -127,32 +127,23 @@ async function createSubmission(
     // Check submission limits
     const limitCheck = await checkSubmissionLimits(authenticatedRequest.user.id);
     if (!limitCheck.canSubmit) {
-      return reply.code(429).send({
-        success: false,
-        error: limitCheck.reason || 'Submission limit reached'
-      });
+      throw new Error(limitCheck.reason || 'Submission limit reached');
     }
 
     // If it's an update, verify the location exists
     if (submissionData.submission_type === 'update') {
       if (!submissionData.existing_location_id) {
-        return reply.code(400).send({
-          success: false,
-          error: 'existing_location_id is required for update submissions'
-        });
+        throw new Error('An existing location ID is required for update submissions');
       }
 
-      const { data: existingLocation, error: locationError } = await supabaseAdmin
+      const { error: locationError } = await supabaseAdmin
         .from('locations')
         .select('id, name')
         .eq('id', submissionData.existing_location_id)
         .single();
 
-      if (locationError || !existingLocation) {
-        return reply.code(400).send({
-          success: false,
-          error: 'Existing location not found'
-        });
+      if (locationError) {
+        throw locationError;
       }
     }
 
@@ -183,11 +174,7 @@ async function createSubmission(
       .single();
 
     if (submissionError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to create submission',
-        details: submissionError.message
-      });
+      throw submissionError;
     }
 
     // Insert images if provided
@@ -204,7 +191,7 @@ async function createSubmission(
 
       if (imageError) {
         request.log.error('⚠️ Warning: Failed to save images:', imageError.message);
-        // Don't fail the whole request, just log the warning
+        throw imageError;
       } else {
         request.log.info('✅ Saved', imageRecords.length, 'images for submission');
       }
@@ -221,19 +208,8 @@ async function createSubmission(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid submission data',
-        details: error.errors
-      });
-    }
-
     request.log.error('Error in createSubmission:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error'
-    });
+    throw error;
   }
 }
 

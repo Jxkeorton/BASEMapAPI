@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
+import { PostgrestError, AuthError } from "@supabase/supabase-js";
 import type { ErrorResponse } from "../shared/ErrorResponse";
 
 export default async function errorHandlerPlugin(fastify: FastifyInstance) {
@@ -21,6 +22,27 @@ export default async function errorHandlerPlugin(fastify: FastifyInstance) {
         return;
       }
 
+      // Supabase Auth error
+      if (error instanceof AuthError) {
+        response = {
+          success: false,
+          error: error.message,
+        };
+        reply.code(error.status || 401).send(response);
+        return;
+      }
+
+      // Supabase Postgrest error
+      if (error instanceof PostgrestError) {
+        response = {
+          success: false,
+          error: error.message,
+          details: error.details || undefined,
+        };
+        reply.code(400).send(response);
+        return;
+      }
+
       // Fastify HTTP errors (like 404, 400, etc)
       if (error.statusCode && error.message) {
         response = {
@@ -29,6 +51,11 @@ export default async function errorHandlerPlugin(fastify: FastifyInstance) {
         };
         reply.code(error.statusCode).send(response);
         return;
+      }
+
+      // Fallback for all other errors
+      if (error instanceof Error) {
+        response.error = error.message;
       }
 
       // Fallback for all other errors

@@ -48,10 +48,7 @@ async function getSubmissionLimits(
       .eq('status', 'pending');
 
     if (pendingError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to check submission limits'
-      });
+      throw pendingError;
     }
 
     // Get today's submissions
@@ -62,10 +59,7 @@ async function getSubmissionLimits(
       .gte('created_at', today.toISOString());
 
     if (todayError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to check submission limits'
-      });
+      throw todayError;
     }
 
     const currentPendingCount = pendingSubmissions?.length || 0;
@@ -91,10 +85,7 @@ async function getSubmissionLimits(
 
   } catch (error) {
     request.log.error('Error in getSubmissionLimits:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error'
-    });
+    throw error;
   }
 }
 

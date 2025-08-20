@@ -100,10 +100,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
 
     if (error) {
       request.log.error('Error updating profile:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to update profile',
-      });
+      throw error;
     }
 
     // Return simple response
@@ -113,19 +110,8 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in profile update endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

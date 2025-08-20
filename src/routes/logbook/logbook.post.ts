@@ -73,10 +73,7 @@ async function prod(request: FastifyRequest<{ Body: CreateLogbookEntryBody }>, r
 
     if (error) {
       request.log.error('Error creating logbook entry:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to create logbook entry',
-      });
+      throw error;
     }
 
     return reply.code(201).send({
@@ -86,19 +83,8 @@ async function prod(request: FastifyRequest<{ Body: CreateLogbookEntryBody }>, r
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in create logbook entry endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

@@ -30,26 +30,11 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
 
     if (error) {
       request.log.error('Error signing up:', error);
-      
-      // Handle specific error cases
-      if (error.message.includes('User already registered')) {
-        return reply.code(400).send({
-          success: false,
-          error: 'An account with this email already exists',
-        });
-      }
-      
-      return reply.code(400).send({ 
-        success: false, 
-        error: error.message 
-      });
+      throw error;
     }
 
     if (!data.user) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Sign up failed - no user data returned',
-      });
+      throw new Error('User data is missing after signup');
     }
 
     // Check if email confirmation is required
@@ -72,25 +57,13 @@ async function prod(request: FastifyRequest<{ Body: SignUpBody }>, reply: Fastif
       },
     });
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({ 
-        success: false, 
-        error: 'Invalid request data', 
-        details: error.errors 
-      });
-    }
-    
+  } catch (error) {    
     request.log.error('Error in signup endpoint:', error);
-    return reply.code(500).send({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
+    throw error;
   }
 }
 
 export default async function SignUpPost(fastify: FastifyInstance) {
-  // POST /signup
   fastify.post<{
     Body: SignUpBody;
   }>('/signup', {

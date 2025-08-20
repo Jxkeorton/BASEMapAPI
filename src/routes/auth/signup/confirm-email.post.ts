@@ -23,17 +23,11 @@ async function confirmEmail(
     });
 
     if (error) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid or expired confirmation token',
-      });
+      throw error;
     }
 
     if (!data.user || !data.session) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Confirmation failed',
-      });
+      throw new Error('Invalid user or session data');
     }
 
     return reply.send({
@@ -55,10 +49,7 @@ async function confirmEmail(
 
   } catch (error) {
     request.log.error('Error in confirm-email endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

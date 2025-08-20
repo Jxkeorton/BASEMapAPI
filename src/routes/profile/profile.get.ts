@@ -38,17 +38,11 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (error) {
-      return reply.code(500).send({ 
-        success: false, 
-        error: 'Failed to fetch profile' 
-      });
+      throw error;
     }
 
     if (!profile) {
-      return reply.code(404).send({
-        success: false,
-        error: 'Profile not found',
-      });
+      throw new Error('Profile not found');
     }
 
     return reply.send({
@@ -58,10 +52,7 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
 
   } catch (error) {
     request.log.error('Error in profile endpoint:', error);
-    return reply.code(500).send({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
+    throw error;
   }
 }
 

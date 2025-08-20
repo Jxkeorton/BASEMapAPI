@@ -21,17 +21,11 @@ async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: Fasti
 
     if (error) {
       request.log.error('Error refreshing token:', error);
-      return reply.code(401).send({ 
-        success: false, 
-        error: 'Invalid or expired refresh token' 
-      });
+      throw error;
     }
 
     if (!data.session) {
-      return reply.code(401).send({
-        success: false,
-        error: 'Failed to refresh session',
-      });
+      throw new Error('Failed to refresh session');
     }
 
     return reply.send({
@@ -46,19 +40,8 @@ async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: Fasti
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({ 
-        success: false, 
-        error: 'Invalid request data', 
-        details: error.errors 
-      });
-    }
-    
     request.log.error('Error in refresh endpoint:', error);
-    return reply.code(500).send({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
+    throw error;
   }
 }
 

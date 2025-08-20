@@ -69,10 +69,7 @@ async function getUserSubmissions(
     const { data: submissions, error } = await supabaseQuery;
 
     if (error) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to fetch submissions'
-      });
+      throw error;
     }
 
     // Get total count for pagination
@@ -114,19 +111,8 @@ async function getUserSubmissions(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid query parameters',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in getUserSubmissions:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

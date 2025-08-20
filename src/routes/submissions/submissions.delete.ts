@@ -33,7 +33,7 @@ async function deleteSubmission(
     const { id } = request.params;
 
     // Check if submission exists and belongs to user and is pending
-    const { data: existingSubmission, error: fetchError } = await supabaseAdmin
+    const { error: fetchError } = await supabaseAdmin
       .from('location_submission_requests')
       .select('id, status')
       .eq('id', id)
@@ -41,11 +41,8 @@ async function deleteSubmission(
       .eq('status', 'pending')
       .single();
 
-    if (fetchError || !existingSubmission) {
-      return reply.code(404).send({
-        success: false,
-        error: 'Submission not found or cannot be deleted'
-      });
+    if (fetchError) {
+      throw fetchError;
     }
 
     // Delete the submission (images will be cascade deleted due to foreign key)
@@ -55,11 +52,7 @@ async function deleteSubmission(
       .eq('id', id);
 
     if (deleteError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to delete submission',
-        details: deleteError.message
-      });
+      throw deleteError;
     }
 
     return reply.send({
@@ -69,10 +62,7 @@ async function deleteSubmission(
 
   } catch (error) {
     request.log.error('Error in deleteSubmission:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error'
-    });
+    throw error;
   }
 }
 

@@ -60,10 +60,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (locationError || !location) {
-      return reply.code(404).send({
-        success: false,
-        error: 'Location not found',
-      });
+      throw new Error('Location not found');
     }
 
     // Check if location is already saved by this user
@@ -75,17 +72,11 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found (good)
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to check if location is already saved',
-      });
+      throw checkError;
     }
 
     if (existingSave) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Location is already saved to your favorites',
-      });
+      throw new Error('Location is already saved to your favorites');
     }
 
     // Save the location
@@ -100,10 +91,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
 
     if (error) {
       request.log.error('Error saving location:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to save location',
-      });
+      throw error;
     }
 
     return reply.send({
@@ -117,19 +105,8 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in save location endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

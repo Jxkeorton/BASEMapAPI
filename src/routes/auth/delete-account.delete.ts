@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../services/supabase';
 import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
-import { User } from '@supabase/supabase-js';
+import { AuthError, User } from '@supabase/supabase-js';
 import { deleteAccountFastifySchema } from '../../schemas/auth/delete';
 
 /**
@@ -12,14 +12,14 @@ async function verifyUserIdentity(
   user: User, 
   password?: string, 
   method?: string
-): Promise<{ success: boolean; error?: string; method?: string }> {
+): Promise<{ success: boolean; error?: AuthError | Error; method?: string }> {
   
   try {
     // Get user's authentication identities
     const { data: identities, error: identitiesError } = await supabaseAdmin.auth.admin.getUserById(user.id);
     
     if (identitiesError || !identities.user) {
-      return { success: false, error: 'Unable to fetch user authentication details' };
+      return { success: false, error: identitiesError || undefined};
     }
 
     const userIdentities = identities.user.identities || [];
@@ -36,7 +36,7 @@ async function verifyUserIdentity(
       if (!passwordError) {
         return { success: true, method: 'password' };
       } else {
-        return { success: false, error: 'Invalid password. Account deletion cancelled.' };
+        return { success: false, error: passwordError };
       }
     }
 
@@ -50,22 +50,22 @@ async function verifyUserIdentity(
     if (hasEmailPassword && !password) {
       return { 
         success: false, 
-        error: 'Password required for account deletion. This account uses email/password authentication.' 
+        error: new Error('Password is required for account deletion'),
       };
     }
 
     if (hasOAuthOnly && password) {
       return { 
         success: false, 
-        error: 'This account uses OAuth authentication (Google/Apple). Password not required.' 
+        error: new Error('This account uses OAuth authentication (Google/Apple). Password not required.') 
       };
     }
 
     // Fallback
-    return { success: false, error: 'Unable to verify user identity' };
+    return { success: false, error: new Error('Unable to verify user identity') };
 
   } catch (error) {
-    return { success: false, error: 'Identity verification failed' };
+    return { success: false, error: new Error('Identity verification failed') };
   }
 }
 
@@ -90,20 +90,14 @@ async function deleteAccount(
 
     // Check confirmation text
     if (body.confirmation.toUpperCase() !== 'DELETE') {
-      return reply.code(400).send({
-        success: false,
-        error: 'Confirmation must be "DELETE" to proceed with account deletion',
-      });
+      throw new Error('Confirmation must be "DELETE" to proceed with account deletion');
     }
 
     // Verify user identity based on their authentication method
     const identityVerified = await verifyUserIdentity(authenticatedRequest.user, body.password, body.verification_method);
     
     if (!identityVerified.success) {
-      return reply.code(401).send({
-        success: false,
-        error: identityVerified.error,
-      });
+      throw identityVerified.error;
     }
 
     // Get user profile for logging purposes
@@ -121,20 +115,14 @@ async function deleteAccount(
       .eq('id', userId);
 
     if (profileDeleteError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to delete account data. Please try again or contact support.',
-      });
+      throw profileDeleteError;
     }
 
     // Delete from Supabase Auth (final step)
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Account data deleted but authentication cleanup failed. Please contact support.',
-      });
+      throw authDeleteError;
     }
 
     return reply.send({
@@ -143,19 +131,8 @@ async function deleteAccount(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in account deletion endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'An unexpected error occurred during account deletion. Please try again or contact support.',
-    });
+    throw error;
   }
 }
 

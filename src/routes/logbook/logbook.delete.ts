@@ -49,17 +49,11 @@ async function prod(
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to check logbook entry',
-      });
+      throw checkError;
     }
 
     if (!existingEntry) {
-      return reply.code(404).send({
-        success: false,
-        error: 'Logbook entry not found',
-      });
+      throw new Error('Logbook entry not found');
     }
 
     // Delete the entry
@@ -71,10 +65,7 @@ async function prod(
 
     if (error) {
       request.log.error('Error deleting logbook entry:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to delete logbook entry',
-      });
+      throw error;
     }
 
     return reply.send({
@@ -83,19 +74,8 @@ async function prod(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request parameters',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in delete logbook entry endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

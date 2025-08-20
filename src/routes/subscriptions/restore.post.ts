@@ -51,17 +51,11 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to verify RevenueCat customer ID',
-      });
+      throw checkError;
     }
 
     if (existingUser) {
-      return reply.code(400).send({
-        success: false,
-        error: 'This subscription is already linked to another account',
-      });
+      throw new Error('This subscription is already linked to another account');
     }
 
     // Update user's subscription information
@@ -79,10 +73,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
 
     if (error) {
       request.log.error('Error updating subscription:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to restore subscription',
-      });
+      throw error;
     }
 
     // Return simple response
@@ -98,19 +89,8 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in restore subscription endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

@@ -52,14 +52,11 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (locationError || !location) {
-      return reply.code(404).send({
-        success: false,
-        error: 'Location not found',
-      });
+      throw locationError || new Error('Location not found');
     }
 
     // Remove the saved location
-    const { data: deletedSave, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('user_saved_locations')
       .delete()
       .eq('user_id', authenticatedRequest.user.id)
@@ -68,18 +65,8 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') { // No rows found
-        return reply.code(404).send({
-          success: false,
-          error: 'Location is not in your favorites',
-        });
-      }
-
       request.log.error('Error unsaving location:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to remove location from favorites',
-      });
+      throw error;
     }
 
     return reply.send({
@@ -88,19 +75,8 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in unsave location endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

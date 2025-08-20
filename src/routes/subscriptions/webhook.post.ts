@@ -1,4 +1,3 @@
-// src/routes/subscriptions/webhook.post.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../services/supabase';
@@ -112,10 +111,7 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
 
     if (error) {
       request.log.error('Error updating subscription from webhook:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to update subscription',
-      });
+      throw error;
     }
 
     // Return simple response
@@ -125,19 +121,8 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid webhook data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('RevenueCat webhook error:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Webhook processing failed',
-    });
+    throw error;
   }
 }
 

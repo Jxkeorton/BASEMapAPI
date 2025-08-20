@@ -23,10 +23,7 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>,
     });
 
     if (sessionError || !sessionData.user) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid or expired reset tokens',
-      });
+      throw sessionError;
     }
 
     // Update the user's password
@@ -35,10 +32,7 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>,
     });
 
     if (updateError) {
-      return reply.code(400).send({
-        success: false,
-        error: updateError.message,
-      });
+      throw updateError;
     }
 
     // Return success response
@@ -48,19 +42,8 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>,
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in reset-password-confirm endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

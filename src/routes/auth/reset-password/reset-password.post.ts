@@ -20,18 +20,7 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply:
 
     if (error) {
       request.log.error('Error sending reset email:', error);
-      return reply.code(400).send({ 
-        success: false, 
-        error: error.message 
-      });
-    }
-
-    if (error) {
-      request.log.error('Error sending reset email:', error);
-      return reply.code(400).send({ 
-        success: false, 
-        error: error 
-      });
+      throw error;
     }
 
     // Always return success (don't reveal if email exists or not)
@@ -40,20 +29,9 @@ async function prod(request: FastifyRequest<{ Body: ResetPasswordBody }>, reply:
       message: 'If an account with that email exists, a password reset link has been sent.',
     });
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({ 
-        success: false, 
-        error: 'Invalid request data', 
-        details: error.errors 
-      });
-    }
-    
+  } catch (error) {    
     request.log.error('Error in reset-password endpoint:', error);
-    return reply.code(500).send({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
+    throw error;
   }
 }
 

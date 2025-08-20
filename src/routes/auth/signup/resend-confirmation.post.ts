@@ -28,23 +28,14 @@ async function resendConfirmation(
     if (error) {
       // Handle specific error cases
       if (error.message.includes('Email not confirmed')) {
-        return reply.code(400).send({
-          success: false,
-          error: 'Email address not found or already confirmed',
-        });
+        throw error;
       }
       
       if (error.message.includes('Email rate limit exceeded')) {
-        return reply.code(429).send({
-          success: false,
-          error: 'Too many requests. Please wait before requesting another confirmation email.',
-        });
+        throw error;
       }
       
-      return reply.code(400).send({
-        success: false,
-        error: error.message,
-      });
+      throw error;
     }
 
     return reply.send({
@@ -53,19 +44,8 @@ async function resendConfirmation(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in resend-confirmation endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

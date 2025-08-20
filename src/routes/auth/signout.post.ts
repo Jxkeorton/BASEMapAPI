@@ -10,10 +10,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
 
     if (error) {
       request.log.error('Error signing out:', error);
-      return reply.code(500).send({ 
-        success: false, 
-        error: 'Sign out failed' 
-      });
+      throw error;
     }
 
     // Return simple response
@@ -24,10 +21,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
 
   } catch (error) {
     request.log.error('Error in signout endpoint:', error);
-    return reply.code(500).send({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
+    throw error;
   }
 }
 

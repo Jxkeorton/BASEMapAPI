@@ -85,10 +85,7 @@ async function prod(request: FastifyRequest<{ Querystring: LogbookQuery }>, repl
 
     if (error) {
       request.log.error('Error fetching logbook entries:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to fetch logbook entries',
-      });
+      throw error;
     }
 
     // Get total count for pagination
@@ -113,19 +110,8 @@ async function prod(request: FastifyRequest<{ Querystring: LogbookQuery }>, repl
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid query parameters',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in logbook entries endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

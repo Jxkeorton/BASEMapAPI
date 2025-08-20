@@ -74,10 +74,7 @@ async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, re
 
     if (error) {
       request.log.error('Error fetching locations:', error);
-      return reply.code(500).send({ 
-        success: false, 
-        error: 'Failed to fetch locations' 
-      });
+      throw error;
     }
 
     // Return simple response
@@ -86,22 +83,9 @@ async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, re
       data: data || [],
     });
 
-    
-    
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({ 
-        success: false, 
-        error: 'Invalid query parameters', 
-        details: error.errors 
-      });
-    }
-    
     request.log.error('Error in locations endpoint:', error);
-    return reply.code(500).send({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
+    throw error;
   }
 }
 
