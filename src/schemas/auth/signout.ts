@@ -10,14 +10,6 @@ export const signOutFastifySchema = {
         message: { type: 'string' },
       },
       required: ['success', 'message'],
-    },
-    500: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-      required: ['success', 'error'],
-    },
+    }
   },
 };

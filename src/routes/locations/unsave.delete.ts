@@ -27,14 +27,7 @@ const unsaveLocationFastifySchema = {
         success: { type: 'boolean' },
         message: { type: 'string' },
       },
-    },
-    404: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-    },
+    }
   },
 };
 

@@ -71,11 +71,7 @@ async function createLocation(
       .single();
 
     if (error) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to create location',
-        details: error.message
-      });
+      throw error;
     }
 
     return reply.code(201).send({
@@ -85,19 +81,8 @@ async function createLocation(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid location data',
-        details: error.errors
-      });
-    }
-
     request.log.error('Error in createLocation:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error'
-    });
+    throw error;
   }
 }
 

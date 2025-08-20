@@ -74,10 +74,7 @@ async function updateLocation(
 
     // Check if there's actually data to update
     if (Object.keys(updateData).length === 0) {
-      return reply.code(400).send({
-        success: false,
-        error: 'No update data provided'
-      });
+      throw new Error('No update data provided');
     }
 
     // Check if location exists
@@ -88,10 +85,7 @@ async function updateLocation(
       .single();
 
     if (fetchError || !existingLocation) {
-      return reply.code(404).send({
-        success: false,
-        error: 'Location not found'
-      });
+      throw fetchError || new Error('Location not found');
     }
 
     // Update location
@@ -106,11 +100,7 @@ async function updateLocation(
       .single();
 
     if (updateError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to update location',
-        details: updateError.message
-      });
+      throw updateError;
     }
 
     return reply.send({
@@ -120,19 +110,8 @@ async function updateLocation(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid request data',
-        details: error.errors
-      });
-    }
-
     request.log.error('Error in updateLocation:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error'
-    });
+    throw error;
   }
 }
 

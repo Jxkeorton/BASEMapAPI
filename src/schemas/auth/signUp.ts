@@ -32,23 +32,6 @@ export const signUpFastifySchema = {
 					},
 				},
 			},
-		},
-		400: {
-			type: 'object',
-			properties: {
-				success: { type: 'boolean' },
-				error: { type: 'string' },
-				details: { type: 'array', items: { type: 'object' }, nullable: true },
-			},
-			required: ['success', 'error'],
-		},
-		500: {
-			type: 'object',
-			properties: {
-				success: { type: 'boolean' },
-				error: { type: 'string' },
-			},
-			required: ['success', 'error'],
-		},
+		}
 	},
 };

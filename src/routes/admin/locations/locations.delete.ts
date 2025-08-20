@@ -38,10 +38,7 @@ async function deleteLocation(
       .single();
 
     if (fetchError || !existingLocation) {
-      return reply.code(404).send({
-        success: false,
-        error: 'Location not found'
-      });
+      throw fetchError || new Error('Location not found');
     }
 
     // Check if location has any dependencies (saved locations, logbook entries, etc.)
@@ -66,11 +63,7 @@ async function deleteLocation(
       .eq('id', locationId);
 
     if (deleteError) {
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to delete location',
-        details: deleteError.message
-      });
+      throw deleteError;
     }
 
     return reply.send({
@@ -85,19 +78,8 @@ async function deleteLocation(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid location ID',
-        details: error.errors
-      });
-    }
-
     request.log.error('Error in deleteLocation:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error'
-    });
+    throw error;
   }
 }
 

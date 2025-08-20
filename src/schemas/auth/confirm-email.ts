@@ -46,21 +46,5 @@ export const confirmEmailFastifySchema = {
       },
       required: ['success', 'data'],
     },
-    400: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-      required: ['success', 'error'],
-    },
-    500: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-      required: ['success', 'error'],
-    },
   },
 };

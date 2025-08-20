@@ -171,11 +171,7 @@ async function getSubmissions(
 
     if (error) {
       request.log.error('Error fetching submissions:', error);
-      return reply.code(500).send({
-        success: false,
-        error: 'Failed to fetch submissions',
-        details: error.message
-      });
+      throw error;
     }
 
     // Get total count for pagination
@@ -229,19 +225,8 @@ async function getSubmissions(
     });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid query parameters',
-        details: error.errors,
-      });
-    }
-
     request.log.error('Error in submissions endpoint:', error);
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal server error',
-    });
+    throw error;
   }
 }
 

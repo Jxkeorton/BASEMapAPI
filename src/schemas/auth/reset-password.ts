@@ -16,24 +16,7 @@ export const resetPasswordFastifySchema = {
         message: { type: 'string' },
       },
       required: ['success', 'message'],
-    },
-    400: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-        details: { type: 'array', items: { type: 'object' }, nullable: true },
-      },
-      required: ['success', 'error'],
-    },
-    500: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-      required: ['success', 'error'],
-    },
+    }
   },
 };
 
@@ -57,23 +40,6 @@ export const resetPasswordConfirmFastifySchema = {
         message: { type: 'string' },
       },
       required: ['success', 'message'],
-    },
-    400: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-        details: { type: 'array', items: { type: 'object' }, nullable: true },
-      },
-      required: ['success', 'error'],
-    },
-    500: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        error: { type: 'string' },
-      },
-      required: ['success', 'error'],
-    },
+    }
   },
 };
