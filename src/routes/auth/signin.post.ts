@@ -1,17 +1,20 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { signInFastifySchema } from '../../schemas/auth/signIn';
-import { supabaseClient } from '../../services/supabase';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { signInFastifySchema } from "../../schemas/auth/signIn";
+import { supabaseClient } from "../../services/supabase";
 
 const signInBodySchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type SignInBody = z.infer<typeof signInBodySchema>;
 
 // Handler function - same pattern as locations
-async function prod(request: FastifyRequest<{ Body: SignInBody }>, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Body: SignInBody }>,
+  reply: FastifyReply
+) {
   try {
     // Validate request body
     const body = signInBodySchema.parse(request.body);
@@ -40,9 +43,8 @@ async function prod(request: FastifyRequest<{ Body: SignInBody }>, reply: Fastif
         },
       },
     });
-
   } catch (error) {
-    request.log.error('Error in signin endpoint:', error);
+    request.log.error("Error in signin endpoint:", error);
     throw error;
   }
 }
@@ -50,8 +52,8 @@ async function prod(request: FastifyRequest<{ Body: SignInBody }>, reply: Fastif
 export default async function SignInPost(fastify: FastifyInstance) {
   fastify.post<{
     Body: SignInBody;
-  }>('/signin', {
+  }>("/signin", {
     schema: signInFastifySchema,
-    handler: prod
+    handler: prod,
   });
 }

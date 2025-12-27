@@ -1,7 +1,7 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { supabaseAdmin, supabaseClient } from '../../services/supabase';
-import { LocationsResponseData } from '../../schemas/locations';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { LocationsResponseData } from "../../schemas/locations";
+import { supabaseAdmin } from "../../services/supabase";
 
 // Simple validation schema - just optional filters
 const locationsQuerySchema = z.object({
@@ -14,53 +14,56 @@ const locationsQuerySchema = z.object({
 type LocationsQuery = z.infer<typeof locationsQuerySchema>;
 
 const locationsFastifySchema = {
-  description: 'Get all BASE jumping locations',
-  tags: ['locations'],
+  description: "Get all BASE jumping locations",
+  tags: ["locations"],
   querystring: {
-    type: 'object',
+    type: "object",
     properties: {
-      country: { type: 'string', description: 'Filter by country' },
-      min_height: { type: 'number', description: 'Minimum height in feet' },
-      max_height: { type: 'number', description: 'Maximum height in feet' },
-      search: { type: 'string', description: 'Search in name, country, or notes' },
+      country: { type: "string", description: "Filter by country" },
+      min_height: { type: "number", description: "Minimum height in feet" },
+      max_height: { type: "number", description: "Maximum height in feet" },
+      search: {
+        type: "string",
+        description: "Search in name, country, or notes",
+      },
     },
   },
   response: {
     200: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
-        data: LocationsResponseData
-      }
-    }
-  }
+        success: { type: "boolean" },
+        data: LocationsResponseData,
+      },
+    },
+  },
 };
 
 // Handler function
-async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Querystring: LocationsQuery }>,
+  reply: FastifyReply
+) {
   try {
-
     // Validate query parameters
     const query = locationsQuerySchema.parse(request.query);
 
     // Build Supabase query
-    let supabaseQuery = supabaseAdmin
-      .from('locations')
-      .select('*');
+    let supabaseQuery = supabaseAdmin.from("locations").select("*");
 
     // Apply filters
     if (query.country) {
-      supabaseQuery = supabaseQuery.ilike('country', `%${query.country}%`);
+      supabaseQuery = supabaseQuery.ilike("country", `%${query.country}%`);
     }
-    
+
     if (query.min_height) {
-      supabaseQuery = supabaseQuery.gte('total_height_ft', query.min_height);
+      supabaseQuery = supabaseQuery.gte("total_height_ft", query.min_height);
     }
-    
+
     if (query.max_height) {
-      supabaseQuery = supabaseQuery.lte('total_height_ft', query.max_height);
+      supabaseQuery = supabaseQuery.lte("total_height_ft", query.max_height);
     }
-    
+
     if (query.search) {
       supabaseQuery = supabaseQuery.or(
         `name.ilike.%${query.search}%,country.ilike.%${query.search}%,notes.ilike.%${query.search}%`
@@ -68,12 +71,12 @@ async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, re
     }
 
     // Order by name
-    supabaseQuery = supabaseQuery.order('name');
+    supabaseQuery = supabaseQuery.order("name");
 
     const { data, error } = await supabaseQuery;
 
     if (error) {
-      request.log.error('Error fetching locations:', error);
+      request.log.error("Error fetching locations:", error);
       throw error;
     }
 
@@ -82,9 +85,8 @@ async function prod(request: FastifyRequest<{ Querystring: LocationsQuery }>, re
       success: true,
       data: data || [],
     });
-
   } catch (error) {
-    request.log.error('Error in locations endpoint:', error);
+    request.log.error("Error in locations endpoint:", error);
     throw error;
   }
 }
@@ -93,8 +95,8 @@ export default async function LocationsGet(fastify: FastifyInstance) {
   // Get all locations with optional filtering
   fastify.get<{
     Querystring: LocationsQuery;
-  }>('/locations', {
+  }>("/locations", {
     schema: locationsFastifySchema,
-    handler: prod
+    handler: prod,
   });
 }

@@ -1,10 +1,10 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { supabaseAdmin } from '../../services/supabase';
-import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import { supabaseAdmin } from "../../services/supabase";
 
 const createSubmissionSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, "Name is required"),
   country: z.string().optional(),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
@@ -16,97 +16,105 @@ const createSubmissionSchema = z.object({
   notes: z.string().optional(),
   opened_by_name: z.string().optional(),
   opened_date: z.string().optional(),
-  video_link: z.string().url().optional().or(z.literal('')),
-  submission_type: z.enum(['new', 'update']).default('new'),
+  video_link: z.string().url().optional().or(z.literal("")),
+  submission_type: z.enum(["new", "update"]).default("new"),
   existing_location_id: z.number().int().positive().optional(),
-  image_urls: z.array(z.string().url()).optional().default([])
+  image_urls: z.array(z.string().url()).optional().default([]),
 });
 
 type CreateSubmissionBody = z.infer<typeof createSubmissionSchema>;
 
 const createSubmissionFastifySchema = {
-  description: 'Submit a new location or update request',
-  tags: ['locations'],
+  description: "Submit a new location or update request",
+  tags: ["locations"],
   security: [{ bearerAuth: [] }],
   body: {
-    type: 'object',
-    required: ['name', 'latitude', 'longitude'],
+    type: "object",
+    required: ["name", "latitude", "longitude"],
     properties: {
-      name: { type: 'string', minLength: 1 },
-      country: { type: 'string' },
-      latitude: { type: 'number', minimum: -90, maximum: 90 },
-      longitude: { type: 'number', minimum: -180, maximum: 180 },
-      rock_drop_ft: { type: 'integer', minimum: 1 },
-      total_height_ft: { type: 'integer', minimum: 1 },
-      cliff_aspect: { type: 'string' },
-      anchor_info: { type: 'string' },
-      access_info: { type: 'string' },
-      notes: { type: 'string' },
-      opened_by_name: { type: 'string' },
-      opened_date: { type: 'string' },
-      video_link: { type: 'string', format: 'uri' },
-      submission_type: { type: 'string', enum: ['new', 'update'], default: 'new' },
-      existing_location_id: { type: 'integer', minimum: 1 },
-      image_urls: { type: 'array', items: { type: 'string', format: 'uri' } }
-    }
+      name: { type: "string", minLength: 1 },
+      country: { type: "string" },
+      latitude: { type: "number", minimum: -90, maximum: 90 },
+      longitude: { type: "number", minimum: -180, maximum: 180 },
+      rock_drop_ft: { type: "integer", minimum: 1 },
+      total_height_ft: { type: "integer", minimum: 1 },
+      cliff_aspect: { type: "string" },
+      anchor_info: { type: "string" },
+      access_info: { type: "string" },
+      notes: { type: "string" },
+      opened_by_name: { type: "string" },
+      opened_date: { type: "string" },
+      video_link: { type: "string", format: "uri" },
+      submission_type: {
+        type: "string",
+        enum: ["new", "update"],
+        default: "new",
+      },
+      existing_location_id: { type: "integer", minimum: 1 },
+      image_urls: { type: "array", items: { type: "string", format: "uri" } },
+    },
   },
   response: {
     201: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
+        success: { type: "boolean" },
+        message: { type: "string" },
         data: {
-          type: 'object',
+          type: "object",
           properties: {
-            id: { type: 'string' },
-            status: { type: 'string' },
-            submission_type: { type: 'string' }
-          }
-        }
-      }
-    }
-  }
+            id: { type: "string" },
+            status: { type: "string" },
+            submission_type: { type: "string" },
+          },
+        },
+      },
+    },
+  },
 };
 
 // Helper function to check submission limits
-async function checkSubmissionLimits(userId: string): Promise<{ canSubmit: boolean; reason?: string }> {
+async function checkSubmissionLimits(
+  userId: string
+): Promise<{ canSubmit: boolean; reason?: string }> {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   // Check pending submissions limit (max 5 pending)
   const { data: pendingSubmissions, error: pendingError } = await supabaseAdmin
-    .from('location_submission_requests')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('status', 'pending');
+    .from("location_submission_requests")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "pending");
 
   if (pendingError) {
     return { canSubmit: true }; // Allow if we can't check
   }
 
   if ((pendingSubmissions?.length || 0) >= 5) {
-    return { 
-      canSubmit: false, 
-      reason: 'You have reached the maximum of 5 pending submissions. Please wait for review.' 
+    return {
+      canSubmit: false,
+      reason:
+        "You have reached the maximum of 5 pending submissions. Please wait for review.",
     };
   }
 
   // Check daily submissions limit (max 10 per day)
   const { data: todaySubmissions, error: todayError } = await supabaseAdmin
-    .from('location_submission_requests')
-    .select('id')
-    .eq('user_id', userId)
-    .gte('created_at', today.toISOString());
+    .from("location_submission_requests")
+    .select("id")
+    .eq("user_id", userId)
+    .gte("created_at", today.toISOString());
 
   if (todayError) {
     return { canSubmit: true }; // Allow if we can't check
   }
 
   if ((todaySubmissions?.length || 0) >= 10) {
-    return { 
-      canSubmit: false, 
-      reason: 'You have reached the daily limit of 10 submissions. Please try again tomorrow.' 
+    return {
+      canSubmit: false,
+      reason:
+        "You have reached the daily limit of 10 submissions. Please try again tomorrow.",
     };
   }
 
@@ -115,7 +123,7 @@ async function checkSubmissionLimits(userId: string): Promise<{ canSubmit: boole
 
 // Submit location request
 async function createSubmission(
-  request: FastifyRequest<{ Body: CreateSubmissionBody }>, 
+  request: FastifyRequest<{ Body: CreateSubmissionBody }>,
   reply: FastifyReply
 ) {
   try {
@@ -125,21 +133,25 @@ async function createSubmission(
     const submissionData = createSubmissionSchema.parse(request.body);
 
     // Check submission limits
-    const limitCheck = await checkSubmissionLimits(authenticatedRequest.user.id);
+    const limitCheck = await checkSubmissionLimits(
+      authenticatedRequest.user.id
+    );
     if (!limitCheck.canSubmit) {
-      throw new Error(limitCheck.reason || 'Submission limit reached');
+      throw new Error(limitCheck.reason || "Submission limit reached");
     }
 
     // If it's an update, verify the location exists
-    if (submissionData.submission_type === 'update') {
+    if (submissionData.submission_type === "update") {
       if (!submissionData.existing_location_id) {
-        throw new Error('An existing location ID is required for update submissions');
+        throw new Error(
+          "An existing location ID is required for update submissions"
+        );
       }
 
       const { error: locationError } = await supabaseAdmin
-        .from('locations')
-        .select('id, name')
-        .eq('id', submissionData.existing_location_id)
+        .from("locations")
+        .select("id, name")
+        .eq("id", submissionData.existing_location_id)
         .single();
 
       if (locationError) {
@@ -164,11 +176,11 @@ async function createSubmission(
       opened_date: submissionData.opened_date,
       video_link: submissionData.video_link || null,
       submission_type: submissionData.submission_type,
-      existing_location_id: submissionData.existing_location_id || null
+      existing_location_id: submissionData.existing_location_id || null,
     };
 
     const { data: newSubmission, error: submissionError } = await supabaseAdmin
-      .from('location_submission_requests')
+      .from("location_submission_requests")
       .insert([submissionInsert])
       .select()
       .single();
@@ -182,41 +194,47 @@ async function createSubmission(
       const imageRecords = submissionData.image_urls.map((url, index) => ({
         submission_id: newSubmission.id,
         image_url: url,
-        image_order: index
+        image_order: index,
       }));
 
       const { error: imageError } = await supabaseAdmin
-        .from('location_submission_images')
+        .from("location_submission_images")
         .insert(imageRecords);
 
       if (imageError) {
-        request.log.error('⚠️ Warning: Failed to save images:', imageError.message);
+        request.log.error(
+          "⚠️ Warning: Failed to save images:",
+          imageError.message
+        );
         throw imageError;
       } else {
-        request.log.info('✅ Saved', imageRecords.length, 'images for submission');
+        request.log.info(
+          "✅ Saved",
+          imageRecords.length,
+          "images for submission"
+        );
       }
     }
 
     return reply.code(201).send({
       success: true,
-      message: 'Location submission created successfully',
+      message: "Location submission created successfully",
       data: {
         id: newSubmission.id,
         status: newSubmission.status,
-        submission_type: newSubmission.submission_type
-      }
+        submission_type: newSubmission.submission_type,
+      },
     });
-
   } catch (error) {
-    request.log.error('Error in createSubmission:', error);
+    request.log.error("Error in createSubmission:", error);
     throw error;
   }
 }
 
 export default async function SubmissionsPost(fastify: FastifyInstance) {
-  fastify.post('/locations/submissions', {
+  fastify.post("/locations/submissions", {
     schema: createSubmissionFastifySchema,
     preHandler: authenticateUser,
-    handler: createSubmission
+    handler: createSubmission,
   });
 }

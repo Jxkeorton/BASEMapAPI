@@ -1,17 +1,17 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { supabaseClient } from '../../../services/supabase';
-import { confirmEmailFastifySchema } from '../../../schemas/auth/confirm-email';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { confirmEmailFastifySchema } from "../../../schemas/auth/confirm-email";
+import { supabaseClient } from "../../../services/supabase";
 
 const confirmEmailBodySchema = z.object({
   token: z.string(),
-  type: z.enum(['signup', 'recovery', 'email_change']),
+  type: z.enum(["signup", "recovery", "email_change"]),
 });
 
 type ConfirmEmailBody = z.infer<typeof confirmEmailBodySchema>;
 
 async function confirmEmail(
-  request: FastifyRequest<{ Body: ConfirmEmailBody }>, 
+  request: FastifyRequest<{ Body: ConfirmEmailBody }>,
   reply: FastifyReply
 ) {
   try {
@@ -27,7 +27,7 @@ async function confirmEmail(
     }
 
     if (!data.user || !data.session) {
-      throw new Error('Invalid user or session data');
+      throw new Error("Invalid user or session data");
     }
 
     return reply.send({
@@ -43,18 +43,17 @@ async function confirmEmail(
           refresh_token: data.session.refresh_token,
           expires_at: data.session.expires_at,
         },
-        message: 'Email confirmed successfully! You are now logged in.',
+        message: "Email confirmed successfully! You are now logged in.",
       },
     });
-
   } catch (error) {
-    request.log.error('Error in confirm-email endpoint:', error);
+    request.log.error("Error in confirm-email endpoint:", error);
     throw error;
   }
 }
 
 export default async function ConfirmEmailPost(fastify: FastifyInstance) {
-  fastify.post('/confirm-email', {
+  fastify.post("/confirm-email", {
     schema: confirmEmailFastifySchema,
     handler: confirmEmail,
   });

@@ -1,12 +1,12 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { supabaseAdmin } from '../../services/supabase';
-import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
-import { SubmissionsResponseData } from '../../schemas/submissions';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import { SubmissionsResponseData } from "../../schemas/submissions";
+import { supabaseAdmin } from "../../services/supabase";
 
 const getSubmissionsQuerySchema = z.object({
-  status: z.enum(['pending', 'approved', 'rejected']).optional(),
-  submission_type: z.enum(['new', 'update']).optional(),
+  status: z.enum(["pending", "approved", "rejected"]).optional(),
+  submission_type: z.enum(["new", "update"]).optional(),
   limit: z.coerce.number().min(1).max(100).optional().default(20),
   offset: z.coerce.number().min(0).optional().default(0),
 });
@@ -14,31 +14,31 @@ const getSubmissionsQuerySchema = z.object({
 type GetSubmissionsQuery = z.infer<typeof getSubmissionsQuerySchema>;
 
 const getSubmissionsFastifySchema = {
-  description: 'Get user submission requests',
-  tags: ['locations'],
+  description: "Get user submission requests",
+  tags: ["locations"],
   security: [{ bearerAuth: [] }],
   querystring: {
-    type: 'object',
+    type: "object",
     properties: {
-      status: { type: 'string', enum: ['pending', 'approved', 'rejected'] },
-      submission_type: { type: 'string', enum: ['new', 'update'] },
-      limit: { type: 'number', minimum: 1, maximum: 100, default: 20 },
-      offset: { type: 'number', minimum: 0, default: 0 },
+      status: { type: "string", enum: ["pending", "approved", "rejected"] },
+      submission_type: { type: "string", enum: ["new", "update"] },
+      limit: { type: "number", minimum: 1, maximum: 100, default: 20 },
+      offset: { type: "number", minimum: 0, default: 0 },
     },
   },
   response: {
     200: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
-        data: SubmissionsResponseData
-      }
-    }
-  }
+        success: { type: "boolean" },
+        data: SubmissionsResponseData,
+      },
+    },
+  },
 };
 
 async function getUserSubmissions(
-  request: FastifyRequest<{ Querystring: GetSubmissionsQuery }>, 
+  request: FastifyRequest<{ Querystring: GetSubmissionsQuery }>,
   reply: FastifyReply
 ) {
   try {
@@ -47,23 +47,28 @@ async function getUserSubmissions(
 
     // Build query
     let supabaseQuery = supabaseAdmin
-      .from('location_submission_requests')
-      .select(`
+      .from("location_submission_requests")
+      .select(
+        `
         *,
         location_submission_images(image_url, image_order),
         locations(name)
-      `)
-      .eq('user_id', authenticatedRequest.user.id)
-      .order('created_at', { ascending: false })
+      `
+      )
+      .eq("user_id", authenticatedRequest.user.id)
+      .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
 
     // Apply filters
     if (query.status) {
-      supabaseQuery = supabaseQuery.eq('status', query.status);
+      supabaseQuery = supabaseQuery.eq("status", query.status);
     }
 
     if (query.submission_type) {
-      supabaseQuery = supabaseQuery.eq('submission_type', query.submission_type);
+      supabaseQuery = supabaseQuery.eq(
+        "submission_type",
+        query.submission_type
+      );
     }
 
     const { data: submissions, error } = await supabaseQuery;
@@ -74,21 +79,22 @@ async function getUserSubmissions(
 
     // Get total count for pagination
     let countQuery = supabaseAdmin
-      .from('location_submission_requests')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', authenticatedRequest.user.id);
+      .from("location_submission_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", authenticatedRequest.user.id);
 
-    if (query.status) countQuery = countQuery.eq('status', query.status);
-    if (query.submission_type) countQuery = countQuery.eq('submission_type', query.submission_type);
+    if (query.status) countQuery = countQuery.eq("status", query.status);
+    if (query.submission_type)
+      countQuery = countQuery.eq("submission_type", query.submission_type);
 
     const { count, error: countError } = await countQuery;
 
     if (countError) {
-      request.log.error('⚠️ Error getting total count:', countError.message);
+      request.log.error("⚠️ Error getting total count:", countError.message);
     }
 
     // Transform data to flatten structure and sort images
-    const transformedSubmissions = (submissions || []).map(submission => ({
+    const transformedSubmissions = (submissions || []).map((submission) => ({
       ...submission,
       images: (submission.location_submission_images || [])
         .sort((a: any, b: any) => a.image_order - b.image_order)
@@ -96,7 +102,7 @@ async function getUserSubmissions(
       existing_location_name: submission.locations?.name || null,
       // Remove the nested objects from response
       location_submission_images: undefined,
-      locations: undefined
+      locations: undefined,
     }));
 
     const hasMore = (count || 0) > query.offset + query.limit;
@@ -109,9 +115,8 @@ async function getUserSubmissions(
         has_more: hasMore,
       },
     });
-
   } catch (error) {
-    request.log.error('Error in getUserSubmissions:', error);
+    request.log.error("Error in getUserSubmissions:", error);
     throw error;
   }
 }
@@ -119,9 +124,9 @@ async function getUserSubmissions(
 export default async function SubmissionsGet(fastify: FastifyInstance) {
   fastify.get<{
     Querystring: GetSubmissionsQuery;
-  }>('/locations/submissions', {
+  }>("/locations/submissions", {
     schema: getSubmissionsFastifySchema,
     preHandler: authenticateUser,
-    handler: getUserSubmissions
+    handler: getUserSubmissions,
   });
 }

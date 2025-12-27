@@ -1,21 +1,21 @@
 export const resendConfirmationFastifySchema = {
-  description: 'Resend email confirmation',
-  tags: ['auth'],
+  description: "Resend email confirmation",
+  tags: ["auth"],
   body: {
-    type: 'object',
-    required: ['email'],
+    type: "object",
+    required: ["email"],
     properties: {
-      email: { type: 'string', format: 'email', description: 'User email' },
+      email: { type: "string", format: "email", description: "User email" },
     },
   },
   response: {
     200: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
+        success: { type: "boolean" },
+        message: { type: "string" },
       },
-      required: ['success', 'message'],
-    }
+      required: ["success", "message"],
+    },
   },
 };

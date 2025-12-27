@@ -1,6 +1,11 @@
-import { FastifyInstance, FastifyError, FastifyReply, FastifyRequest } from "fastify";
+import { AuthError, PostgrestError } from "@supabase/supabase-js";
+import {
+  FastifyError,
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+} from "fastify";
 import { ZodError } from "zod";
-import { PostgrestError, AuthError } from "@supabase/supabase-js";
 import type { ErrorResponse } from "../shared/ErrorResponse";
 
 export default async function errorHandlerPlugin(fastify: FastifyInstance) {

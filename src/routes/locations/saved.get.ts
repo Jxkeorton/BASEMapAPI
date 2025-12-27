@@ -1,8 +1,8 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { supabaseAdmin } from '../../services/supabase';
-import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
-import { SavedLocationsResponseData } from '../../schemas/locations';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import { SavedLocationsResponseData } from "../../schemas/locations";
+import { supabaseAdmin } from "../../services/supabase";
 
 const savedLocationsQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(100).optional().default(50),
@@ -12,37 +12,52 @@ const savedLocationsQuerySchema = z.object({
 type SavedLocationsQuery = z.infer<typeof savedLocationsQuerySchema>;
 
 const savedLocationsFastifySchema = {
-  description: 'Get user saved locations with full location details',
-  tags: ['locations'],
+  description: "Get user saved locations with full location details",
+  tags: ["locations"],
   security: [{ bearerAuth: [] }],
   querystring: {
-    type: 'object',
+    type: "object",
     properties: {
-      limit: { type: 'number', minimum: 1, maximum: 100, default: 50, description: 'Number of locations to return' },
-      offset: { type: 'number', minimum: 0, default: 0, description: 'Number of locations to skip' },
+      limit: {
+        type: "number",
+        minimum: 1,
+        maximum: 100,
+        default: 50,
+        description: "Number of locations to return",
+      },
+      offset: {
+        type: "number",
+        minimum: 0,
+        default: 0,
+        description: "Number of locations to skip",
+      },
     },
   },
-    response: {
+  response: {
     200: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
-        data: SavedLocationsResponseData
-      }
-    }
-  }
+        success: { type: "boolean" },
+        data: SavedLocationsResponseData,
+      },
+    },
+  },
 };
 
-async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }>, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Querystring: SavedLocationsQuery }>,
+  reply: FastifyReply
+) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
-    
+
     const query = savedLocationsQuerySchema.parse(request.query);
 
     // Get saved locations with full location details
     const { data: savedLocations, error } = await supabaseAdmin
-      .from('user_saved_locations')
-      .select(`
+      .from("user_saved_locations")
+      .select(
+        `
         id,
         created_at,
         locations:location_id (
@@ -63,28 +78,29 @@ async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }
           created_at,
           updated_at
         )
-      `)
-      .eq('user_id', authenticatedRequest.user.id)
-      .order('created_at', { ascending: false })
+      `
+      )
+      .eq("user_id", authenticatedRequest.user.id)
+      .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
 
     if (error) {
-      request.log.error('Error fetching saved locations:', error);
+      request.log.error("Error fetching saved locations:", error);
       throw error;
     }
 
     // Get total count for pagination
     const { count: totalCount, error: countError } = await supabaseAdmin
-      .from('user_saved_locations')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', authenticatedRequest.user.id);
+      .from("user_saved_locations")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", authenticatedRequest.user.id);
 
-      if (countError) {
-        request.log.warn('⚠️ Error getting total count:', countError.message);
-      }
+    if (countError) {
+      request.log.warn("⚠️ Error getting total count:", countError.message);
+    }
 
     // Transform the data to flatten the structure
-    const transformedLocations = (savedLocations || []).map(save => ({
+    const transformedLocations = (savedLocations || []).map((save) => ({
       save_id: save.id,
       saved_at: save.created_at,
       location: save.locations,
@@ -101,9 +117,8 @@ async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }
         has_more: hasMore,
       },
     });
-
   } catch (error) {
-    request.log.error('Error in saved locations endpoint:', error);
+    request.log.error("Error in saved locations endpoint:", error);
     throw error;
   }
 }
@@ -111,9 +126,9 @@ async function prod(request: FastifyRequest<{ Querystring: SavedLocationsQuery }
 export default async function SavedLocationsGet(fastify: FastifyInstance) {
   fastify.get<{
     Querystring: SavedLocationsQuery;
-  }>('/locations/saved', {
+  }>("/locations/saved", {
     schema: savedLocationsFastifySchema,
     preHandler: authenticateUser,
-    handler: prod
+    handler: prod,
   });
 }

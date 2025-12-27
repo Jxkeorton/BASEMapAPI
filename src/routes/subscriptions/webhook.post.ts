@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { supabaseAdmin } from '../../services/supabase';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { supabaseAdmin } from "../../services/supabase";
 
 // RevenueCat webhook validation schema
 const revenueCatWebhookSchema = z.object({
@@ -21,69 +21,72 @@ const revenueCatWebhookSchema = z.object({
 type RevenueCatWebhookBody = z.infer<typeof revenueCatWebhookSchema>;
 
 const webhookFastifySchema = {
-  description: 'RevenueCat webhook for subscription updates',
-  tags: ['subscriptions'],
+  description: "RevenueCat webhook for subscription updates",
+  tags: ["subscriptions"],
   body: {
-    type: 'object',
-    required: ['api_version', 'event'],
+    type: "object",
+    required: ["api_version", "event"],
     properties: {
-      api_version: { type: 'string' },
+      api_version: { type: "string" },
       event: {
-        type: 'object',
-        required: ['type', 'app_user_id'],
+        type: "object",
+        required: ["type", "app_user_id"],
         properties: {
-          type: { type: 'string', description: 'Event type from RevenueCat' },
-          app_user_id: { type: 'string', description: 'User ID from your app' },
-          product_id: { type: 'string' },
-          period_type: { type: 'string' },
-          purchased_at_ms: { type: 'number' },
-          expiration_at_ms: { type: 'number' },
-          is_trial_period: { type: 'boolean' },
-          price: { type: 'number' },
-          currency: { type: 'string' },
+          type: { type: "string", description: "Event type from RevenueCat" },
+          app_user_id: { type: "string", description: "User ID from your app" },
+          product_id: { type: "string" },
+          period_type: { type: "string" },
+          purchased_at_ms: { type: "number" },
+          expiration_at_ms: { type: "number" },
+          is_trial_period: { type: "boolean" },
+          price: { type: "number" },
+          currency: { type: "string" },
         },
       },
     },
-  }
+  },
 };
 
-async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Body: RevenueCatWebhookBody }>,
+  reply: FastifyReply
+) {
   try {
     // Validate request body
     const body = revenueCatWebhookSchema.parse(request.body);
     const { event } = body;
-    
+
     // Map RevenueCat event types to subscription statuses
-    let subscriptionStatus: 'free' | 'trial' | 'active' | 'expired' = 'free';
+    let subscriptionStatus: "free" | "trial" | "active" | "expired" = "free";
     let expirationDate: string | null = null;
 
     switch (event.type) {
-      case 'INITIAL_PURCHASE':
-      case 'RENEWAL':
-      case 'PRODUCT_CHANGE':
-        subscriptionStatus = event.is_trial_period ? 'trial' : 'active';
+      case "INITIAL_PURCHASE":
+      case "RENEWAL":
+      case "PRODUCT_CHANGE":
+        subscriptionStatus = event.is_trial_period ? "trial" : "active";
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
         break;
 
-      case 'CANCELLATION':
+      case "CANCELLATION":
         // User cancelled but still has access until expiration
-        subscriptionStatus = 'active';
+        subscriptionStatus = "active";
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
         break;
 
-      case 'EXPIRATION':
-        subscriptionStatus = 'expired';
+      case "EXPIRATION":
+        subscriptionStatus = "expired";
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
         break;
 
-      case 'UNCANCELLATION':
-        subscriptionStatus = 'active';
+      case "UNCANCELLATION":
+        subscriptionStatus = "active";
         if (event.expiration_at_ms) {
           expirationDate = new Date(event.expiration_at_ms).toISOString();
         }
@@ -92,36 +95,35 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
       default:
         return reply.send({
           success: true,
-          message: 'Event type not processed',
+          message: "Event type not processed",
         });
     }
 
     // Update user subscription in database using admin client
     const { data: updatedProfile, error } = await supabaseAdmin
-      .from('profiles')
+      .from("profiles")
       .update({
         revenuecat_customer_id: event.app_user_id,
         subscription_status: subscriptionStatus,
         subscription_expires_at: expirationDate,
         subscription_updated_at: new Date().toISOString(),
       })
-      .eq('id', event.app_user_id) // app_user_id should be the user's UUID
-      .select('id, email')
+      .eq("id", event.app_user_id) // app_user_id should be the user's UUID
+      .select("id, email")
       .single();
 
     if (error) {
-      request.log.error('Error updating subscription from webhook:', error);
+      request.log.error("Error updating subscription from webhook:", error);
       throw error;
     }
 
     // Return simple response
     return reply.send({
       success: true,
-      message: 'Subscription updated successfully',
+      message: "Subscription updated successfully",
     });
-
   } catch (error) {
-    request.log.error('RevenueCat webhook error:', error);
+    request.log.error("RevenueCat webhook error:", error);
     throw error;
   }
 }
@@ -129,8 +131,8 @@ async function prod(request: FastifyRequest<{ Body: RevenueCatWebhookBody }>, re
 export default async function RevenueCatWebhookPost(fastify: FastifyInstance) {
   fastify.post<{
     Body: RevenueCatWebhookBody;
-  }>('/subscriptions/webhook', {
+  }>("/subscriptions/webhook", {
     schema: webhookFastifySchema,
-    handler: prod
+    handler: prod,
   });
 }

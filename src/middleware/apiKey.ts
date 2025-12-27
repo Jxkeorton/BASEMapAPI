@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from "fastify";
 
 /**
  * Middleware to validate API key for all requests
@@ -10,22 +10,22 @@ export const validateApiKey = async (
 ) => {
   try {
     // Get API key from x-api-key header
-    const apiKey = request.headers['x-api-key'] as string;
-    
+    const apiKey = request.headers["x-api-key"] as string;
+
     if (!apiKey) {
       return reply.code(401).send({
         success: false,
-        error: 'API key required. Include x-api-key header.'
+        error: "API key required. Include x-api-key header.",
       });
     }
 
     // Get the expected API key from environment
     const expectedApiKey = process.env.API_KEY;
-    
+
     if (!expectedApiKey) {
       return reply.code(500).send({
         success: false,
-        error: 'API key validation not configured'
+        error: "API key validation not configured",
       });
     }
 
@@ -33,14 +33,14 @@ export const validateApiKey = async (
     if (apiKey !== expectedApiKey) {
       return reply.code(403).send({
         success: false,
-        error: 'Invalid API key'
+        error: "Invalid API key",
       });
     }
   } catch (error) {
-    request.log.error('API key validation error:', error);
+    request.log.error("API key validation error:", error);
     return reply.code(500).send({
       success: false,
-      error: 'API key validation failed'
+      error: "API key validation failed",
     });
   }
 };

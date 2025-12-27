@@ -1,35 +1,38 @@
 export const refreshFastifySchema = {
-  description: 'Refresh access token using refresh token',
-  tags: ['auth'],
+  description: "Refresh access token using refresh token",
+  tags: ["auth"],
   body: {
-    type: 'object',
-    required: ['refresh_token'],
+    type: "object",
+    required: ["refresh_token"],
     properties: {
-      refresh_token: { type: 'string', description: 'Refresh token from signin' },
+      refresh_token: {
+        type: "string",
+        description: "Refresh token from signin",
+      },
     },
   },
   response: {
     200: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
+        success: { type: "boolean" },
         data: {
-          type: 'object',
+          type: "object",
           properties: {
             session: {
-              type: 'object',
+              type: "object",
               properties: {
-                access_token: { type: 'string' },
-                refresh_token: { type: 'string' },
-                expires_at: { type: 'number' },
+                access_token: { type: "string" },
+                refresh_token: { type: "string" },
+                expires_at: { type: "number" },
               },
-              required: ['access_token', 'refresh_token', 'expires_at'],
+              required: ["access_token", "refresh_token", "expires_at"],
             },
           },
-          required: ['session'],
+          required: ["session"],
         },
       },
-      required: ['success', 'data'],
+      required: ["success", "data"],
     },
   },
 };

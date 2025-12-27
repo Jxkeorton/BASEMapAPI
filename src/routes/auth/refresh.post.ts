@@ -1,31 +1,34 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
-import { supabaseClient } from '../../services/supabase';
-import { refreshFastifySchema } from '../../schemas/auth/refresh';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { refreshFastifySchema } from "../../schemas/auth/refresh";
+import { supabaseClient } from "../../services/supabase";
 
 const refreshBodySchema = z.object({
-  refresh_token: z.string().min(1, 'Refresh token is required'),
+  refresh_token: z.string().min(1, "Refresh token is required"),
 });
 
 type RefreshBody = z.infer<typeof refreshBodySchema>;
 
-async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Body: RefreshBody }>,
+  reply: FastifyReply
+) {
   try {
     // Validate request body
     const body = refreshBodySchema.parse(request.body);
-    
+
     // Refresh session with Supabase
     const { data, error } = await supabaseClient.auth.refreshSession({
       refresh_token: body.refresh_token,
     });
 
     if (error) {
-      request.log.error('Error refreshing token:', error);
+      request.log.error("Error refreshing token:", error);
       throw error;
     }
 
     if (!data.session) {
-      throw new Error('Failed to refresh session');
+      throw new Error("Failed to refresh session");
     }
 
     return reply.send({
@@ -38,9 +41,8 @@ async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: Fasti
         },
       },
     });
-
   } catch (error) {
-    request.log.error('Error in refresh endpoint:', error);
+    request.log.error("Error in refresh endpoint:", error);
     throw error;
   }
 }
@@ -48,8 +50,8 @@ async function prod(request: FastifyRequest<{ Body: RefreshBody }>, reply: Fasti
 export default async function RefreshPost(fastify: FastifyInstance) {
   fastify.post<{
     Body: RefreshBody;
-  }>('/refresh', {
+  }>("/refresh", {
     schema: refreshFastifySchema,
-    handler: prod
+    handler: prod,
   });
 }

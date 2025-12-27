@@ -1,50 +1,50 @@
 export const confirmEmailFastifySchema = {
-  description: 'Confirm email address',
-  tags: ['auth'],
+  description: "Confirm email address",
+  tags: ["auth"],
   body: {
-    type: 'object',
-    required: ['token', 'type'],
+    type: "object",
+    required: ["token", "type"],
     properties: {
-      token: { type: 'string', description: 'Confirmation token from email' },
-      type: { 
-        type: 'string', 
-        enum: ['signup', 'recovery', 'email_change'],
-        description: 'Type of confirmation'
+      token: { type: "string", description: "Confirmation token from email" },
+      type: {
+        type: "string",
+        enum: ["signup", "recovery", "email_change"],
+        description: "Type of confirmation",
       },
     },
   },
   response: {
     200: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
+        success: { type: "boolean" },
         data: {
-          type: 'object',
+          type: "object",
           properties: {
             user: {
-              type: 'object',
+              type: "object",
               properties: {
-                id: { type: 'string' },
-                email: { type: 'string', format: 'email' },
-                email_confirmed_at: { type: 'string', nullable: true },
+                id: { type: "string" },
+                email: { type: "string", format: "email" },
+                email_confirmed_at: { type: "string", nullable: true },
               },
-              required: ['id', 'email'],
+              required: ["id", "email"],
             },
             session: {
-              type: 'object',
+              type: "object",
               properties: {
-                access_token: { type: 'string' },
-                refresh_token: { type: 'string' },
-                expires_at: { type: 'number' },
+                access_token: { type: "string" },
+                refresh_token: { type: "string" },
+                expires_at: { type: "number" },
               },
-              required: ['access_token', 'refresh_token', 'expires_at'],
+              required: ["access_token", "refresh_token", "expires_at"],
             },
-            message: { type: 'string' },
+            message: { type: "string" },
           },
-          required: ['user', 'session', 'message'],
+          required: ["user", "session", "message"],
         },
       },
-      required: ['success', 'data'],
+      required: ["success", "data"],
     },
   },
 };

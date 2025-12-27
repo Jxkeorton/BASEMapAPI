@@ -1,27 +1,27 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { supabaseAdmin } from '../../services/supabase';
-import { authenticateUser, AuthenticatedRequest } from '../../middleware/auth';
-import { ProfileResponseData } from '../../schemas/profile';
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import { ProfileResponseData } from "../../schemas/profile";
+import { supabaseAdmin } from "../../services/supabase";
 
 const profileFastifySchema = {
-  description: 'Get current user profile with role information',
-  tags: ['auth'],
+  description: "Get current user profile with role information",
+  tags: ["auth"],
   security: [{ bearerAuth: [] }],
   response: {
     200: {
-      type: 'object',
+      type: "object",
       properties: {
-        success: { type: 'boolean' },
-        data: ProfileResponseData
-      }
-    }
-  }
+        success: { type: "boolean" },
+        data: ProfileResponseData,
+      },
+    },
+  },
 };
 
 async function getProfile(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
-    
+
     // Profile should already be attached by authenticateUser middleware
     if (authenticatedRequest.profile) {
       return reply.send({
@@ -32,9 +32,9 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
 
     // Fallback: fetch profile if not cached
     const { data: profile, error } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', authenticatedRequest.user.id)
+      .from("profiles")
+      .select("*")
+      .eq("id", authenticatedRequest.user.id)
       .single();
 
     if (error) {
@@ -42,24 +42,23 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
     }
 
     if (!profile) {
-      throw new Error('Profile not found');
+      throw new Error("Profile not found");
     }
 
     return reply.send({
       success: true,
       data: profile,
     });
-
   } catch (error) {
-    request.log.error('Error in profile endpoint:', error);
+    request.log.error("Error in profile endpoint:", error);
     throw error;
   }
 }
 
 export default async function ProfileGet(fastify: FastifyInstance) {
-  fastify.get('/profile', {
+  fastify.get("/profile", {
     schema: profileFastifySchema,
     preHandler: authenticateUser,
-    handler: getProfile
+    handler: getProfile,
   });
 }

@@ -1,27 +1,27 @@
-import Fastify from 'fastify';
-import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
-import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
-import { appConfig } from './config';
-import AdminLocationsRoutes from './routes/admin/locations';
-import SubmissionRoutes from './routes/submissions';
-import AdminSubmissionsRoutes from './routes/admin/submissions';
-import { validateApiKey } from './middleware/apiKey';
-import AuthRoutes from './routes/auth';
-import errorHandlerPlugin from './plugins/errorHandler';
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
+import Fastify from "fastify";
+import { appConfig } from "./config";
+import { validateApiKey } from "./middleware/apiKey";
+import errorHandlerPlugin from "./plugins/errorHandler";
+import AdminLocationsRoutes from "./routes/admin/locations";
+import AdminSubmissionsRoutes from "./routes/admin/submissions";
+import AuthRoutes from "./routes/auth";
+import SubmissionRoutes from "./routes/submissions";
 
 const fastify = Fastify({
   logger: {
     level: appConfig.logging.level,
-    ...(appConfig.nodeEnv === 'development' && {
+    ...(appConfig.nodeEnv === "development" && {
       transport: {
-        target: 'pino-pretty',
+        target: "pino-pretty",
         options: {
           colorize: true,
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
+          translateTime: "HH:MM:ss Z",
+          ignore: "pid,hostname",
         },
       },
     }),
@@ -44,15 +44,15 @@ async function start() {
       timeWindow: appConfig.rateLimit.timeWindow,
     });
 
-    fastify.addHook('preHandler', async (request, reply) => {
-      if (request.url === '/health') {
+    fastify.addHook("preHandler", async (request, reply) => {
+      if (request.url === "/health") {
         return;
       }
-      
-      if (request.url.startsWith('/docs')) {
+
+      if (request.url.startsWith("/docs")) {
         return;
       }
-      
+
       await validateApiKey(request, reply);
     });
 
@@ -60,20 +60,22 @@ async function start() {
     await fastify.register(swagger, {
       openapi: {
         info: {
-          title: 'BASE Map API',
-          description: 'API for BASE jumping locations and user management',
-          version: '1.0.0',
+          title: "BASE Map API",
+          description: "API for BASE jumping locations and user management",
+          version: "1.0.0",
         },
-        servers: [{
-          url: `http://${appConfig.host}:${appConfig.port}`,
-          description: 'Development server',
-        }],
+        servers: [
+          {
+            url: `http://${appConfig.host}:${appConfig.port}`,
+            description: "Development server",
+          },
+        ],
         components: {
           securitySchemes: {
             bearerAuth: {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
             },
           },
         },
@@ -81,16 +83,16 @@ async function start() {
     });
 
     await fastify.register(swaggerUi, {
-      routePrefix: '/docs',
+      routePrefix: "/docs",
       uiConfig: {
-        docExpansion: 'list',
+        docExpansion: "list",
         deepLinking: false,
       },
     });
 
     // Health check
-    fastify.get('/health', async () => {
-      return { status: 'ok', timestamp: new Date().toISOString() };
+    fastify.get("/health", async () => {
+      return { status: "ok", timestamp: new Date().toISOString() };
     });
 
     // Admin routes
@@ -101,27 +103,27 @@ async function start() {
     await fastify.register(SubmissionRoutes);
 
     // Location routes
-    await fastify.register(import('./routes/locations/locations.get'));
-    await fastify.register(import('./routes/locations/save.post'));
-    await fastify.register(import('./routes/locations/unsave.delete'));
-    await fastify.register(import('./routes/locations/saved.get'));
-    
+    await fastify.register(import("./routes/locations/locations.get"));
+    await fastify.register(import("./routes/locations/save.post"));
+    await fastify.register(import("./routes/locations/unsave.delete"));
+    await fastify.register(import("./routes/locations/saved.get"));
+
     // Auth routes
     await fastify.register(AuthRoutes);
-    
+
     // Profile routes
-    await fastify.register(import('./routes/profile/profile.get'));
-    await fastify.register(import('./routes/profile/profile.patch'));
+    await fastify.register(import("./routes/profile/profile.get"));
+    await fastify.register(import("./routes/profile/profile.patch"));
 
     // Subscription routes
-    await fastify.register(import('./routes/subscriptions/webhook.post'));
-    await fastify.register(import('./routes/subscriptions/restore.post'));
+    await fastify.register(import("./routes/subscriptions/webhook.post"));
+    await fastify.register(import("./routes/subscriptions/restore.post"));
 
     // Logbook routes
-    await fastify.register(import('./routes/logbook/logbook.post'))
-    await fastify.register(import('./routes/logbook/logbook.patch'))
-    await fastify.register(import('./routes/logbook/logbook.get'))
-    await fastify.register(import('./routes/logbook/logbook.delete'))
+    await fastify.register(import("./routes/logbook/logbook.post"));
+    await fastify.register(import("./routes/logbook/logbook.patch"));
+    await fastify.register(import("./routes/logbook/logbook.get"));
+    await fastify.register(import("./routes/logbook/logbook.delete"));
 
     // Start server
     await fastify.listen({
@@ -129,9 +131,12 @@ async function start() {
       port: appConfig.port,
     });
 
-    fastify.log.info(`🚀 Server listening on http://${appConfig.host}:${appConfig.port}`);
-    fastify.log.info(`📚 API Documentation available at http://${appConfig.host}:${appConfig.port}/docs`);
-    
+    fastify.log.info(
+      `🚀 Server listening on http://${appConfig.host}:${appConfig.port}`
+    );
+    fastify.log.info(
+      `📚 API Documentation available at http://${appConfig.host}:${appConfig.port}/docs`
+    );
   } catch (error) {
     fastify.log.error(error);
     process.exit(1);
@@ -145,7 +150,7 @@ const gracefulShutdown = async (signal: string) => {
   process.exit(0);
 };
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 start();
