@@ -96,10 +96,7 @@ async function prod(
 }
 
 export default async function LogbookPatch(fastify: FastifyInstance) {
-  fastify.patch<{
-    Params: UpdateLogbookEntryParams;
-    Body: UpdateLogbookBody;
-  }>("/logbook/:id", {
+  fastify.patch("/logbook/:id", {
     schema: updateLogbookEntryFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

@@ -44,9 +44,7 @@ async function resendConfirmation(
 }
 
 export default async function ResendConfirmationPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: ResendConfirmationBody;
-  }>("/resend-confirmation", {
+  fastify.post("/resend-confirmation", {
     schema: resendConfirmationFastifySchema,
     handler: resendConfirmation,
   });

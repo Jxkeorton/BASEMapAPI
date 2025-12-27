@@ -88,9 +88,7 @@ async function prod(
 
 export default async function LocationsGet(fastify: FastifyInstance) {
   // Get all locations with optional filtering
-  fastify.get<{
-    Querystring: LocationsQuery;
-  }>("/locations", {
+  fastify.get("/locations", {
     schema: locationsFastifySchema,
     handler: prod,
   });

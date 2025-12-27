@@ -73,9 +73,7 @@ async function prod(
 }
 
 export default async function UnsaveLocationDelete(fastify: FastifyInstance) {
-  fastify.delete<{
-    Body: UnsaveLocationBody;
-  }>("/locations/unsave", {
+  fastify.delete("/locations/unsave", {
     schema: unsaveLocationFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

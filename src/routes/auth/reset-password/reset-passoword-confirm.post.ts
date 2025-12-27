@@ -46,9 +46,7 @@ async function prod(
 export default async function ResetPasswordConfirmPost(
   fastify: FastifyInstance
 ) {
-  fastify.post<{
-    Body: ResetPasswordConfirmBody;
-  }>("/reset-password-confirm", {
+  fastify.post("/reset-password/confirm", {
     schema: resetPasswordConfirmFastifySchema,
     handler: prod,
   });

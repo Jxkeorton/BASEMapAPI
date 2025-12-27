@@ -56,9 +56,7 @@ async function prod(
 }
 
 export default async function SignUpPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: SignUpBody;
-  }>("/signup", {
+  fastify.post("/signup", {
     schema: signUpFastifySchema,
     handler: prod,
   });

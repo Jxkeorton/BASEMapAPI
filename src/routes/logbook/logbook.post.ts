@@ -75,9 +75,7 @@ async function prod(
 }
 
 export default async function LogbookPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: CreateLogbookBody;
-  }>("/logbook", {
+  fastify.post("/logbook", {
     schema: createLogbookEntryFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

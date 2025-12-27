@@ -76,9 +76,7 @@ async function prod(
 }
 
 export default async function LogbookDelete(fastify: FastifyInstance) {
-  fastify.delete<{
-    Params: DeleteLogbookEntryParams;
-  }>("/logbook/:id", {
+  fastify.delete("/logbook/:id", {
     schema: deleteLogbookEntryFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

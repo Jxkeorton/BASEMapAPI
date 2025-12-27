@@ -32,9 +32,7 @@ async function prod(
 }
 
 export default async function ResetPasswordPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: ResetPasswordBody;
-  }>("/reset-password", {
+  fastify.post("/reset-password", {
     schema: resetPasswordFastifySchema,
     handler: prod,
   });

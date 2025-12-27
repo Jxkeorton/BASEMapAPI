@@ -104,9 +104,7 @@ async function prod(
 }
 
 export default async function SaveLocationPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: SaveLocationBody;
-  }>("/locations/save", {
+  fastify.post("/locations/save", {
     schema: saveLocationFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

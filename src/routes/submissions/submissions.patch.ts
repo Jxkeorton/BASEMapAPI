@@ -129,10 +129,7 @@ async function updateSubmission(
 }
 
 export default async function SubmissionsPatch(fastify: FastifyInstance) {
-  fastify.patch<{
-    Params: { id: string };
-    Body: UpdateSubmissionUserBody;
-  }>("/locations/submissions/:id", {
+  fastify.patch("/locations/submissions/:id", {
     schema: updateSubmissionFastifySchema,
     preHandler: authenticateUser,
     handler: updateSubmission,

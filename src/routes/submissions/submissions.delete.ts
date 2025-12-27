@@ -66,9 +66,7 @@ async function deleteSubmission(
 }
 
 export default async function SubmissionsDelete(fastify: FastifyInstance) {
-  fastify.delete<{
-    Params: { id: string };
-  }>("/locations/submissions/:id", {
+  fastify.delete("/locations/submissions/:id", {
     schema: deleteSubmissionFastifySchema,
     preHandler: authenticateUser,
     handler: deleteSubmission,

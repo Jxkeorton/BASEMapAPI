@@ -106,9 +106,7 @@ async function getUserSubmissions(
 }
 
 export default async function SubmissionsGet(fastify: FastifyInstance) {
-  fastify.get<{
-    Querystring: GetSubmissionsQuery;
-  }>("/locations/submissions", {
+  fastify.get("/locations/submissions", {
     schema: getSubmissionsFastifySchema,
     preHandler: authenticateUser,
     handler: getUserSubmissions,

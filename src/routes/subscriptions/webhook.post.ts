@@ -92,9 +92,7 @@ async function prod(
 }
 
 export default async function RevenueCatWebhookPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: RevenueCatWebhookBody;
-  }>("/subscriptions/webhook", {
+  fastify.post("/subscriptions/webhook", {
     schema: webhookFastifySchema,
     handler: prod,
   });

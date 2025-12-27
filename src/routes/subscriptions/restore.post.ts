@@ -78,9 +78,7 @@ async function prod(
 export default async function RestoreSubscriptionPost(
   fastify: FastifyInstance
 ) {
-  fastify.post<{
-    Body: RestoreSubscriptionBody;
-  }>("/subscriptions/restore", {
+  fastify.post("/subscriptions/restore", {
     schema: restoreSubscriptionFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

@@ -123,9 +123,7 @@ async function prod(
 }
 
 export default async function SavedLocationsGet(fastify: FastifyInstance) {
-  fastify.get<{
-    Querystring: SavedLocationsQuery;
-  }>("/locations/saved", {
+  fastify.get("/locations/saved", {
     schema: savedLocationsFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

@@ -40,9 +40,7 @@ async function prod(
 }
 
 export default async function RefreshPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: RefreshBody;
-  }>("/refresh", {
+  fastify.post("/refresh", {
     schema: refreshFastifySchema,
     handler: prod,
   });

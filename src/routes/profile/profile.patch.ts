@@ -101,9 +101,7 @@ async function prod(
 }
 
 export default async function ProfilePatch(fastify: FastifyInstance) {
-  fastify.patch<{
-    Body: UpdateProfileBody;
-  }>("/profile", {
+  fastify.patch("/profile", {
     schema: updateProfileFastifySchema,
     preHandler: authenticateUser,
     handler: prod,

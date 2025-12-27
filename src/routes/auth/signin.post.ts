@@ -40,10 +40,7 @@ async function prod(
 }
 
 export default async function SignInPost(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: SignInBody;
-    Reply: SignInResponse;
-  }>("/signin", {
+  fastify.post("/signin", {
     schema: signInFastifySchema,
     handler: prod,
   });
