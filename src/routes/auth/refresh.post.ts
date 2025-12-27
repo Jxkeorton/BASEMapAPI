@@ -1,25 +1,17 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
-import { refreshFastifySchema } from "../../schemas/auth/refresh";
+import { RefreshBody, refreshFastifySchema } from "../../schemas/auth/refresh";
 import { supabaseClient } from "../../services/supabase";
-
-const refreshBodySchema = z.object({
-  refresh_token: z.string().min(1, "Refresh token is required"),
-});
-
-type RefreshBody = z.infer<typeof refreshBodySchema>;
 
 async function prod(
   request: FastifyRequest<{ Body: RefreshBody }>,
   reply: FastifyReply
 ) {
   try {
-    // Validate request body
-    const body = refreshBodySchema.parse(request.body);
+    const { refresh_token } = request.body;
 
     // Refresh session with Supabase
     const { data, error } = await supabaseClient.auth.refreshSession({
-      refresh_token: body.refresh_token,
+      refresh_token,
     });
 
     if (error) {

@@ -1,54 +1,26 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import {
+  RestoreSubscriptionBody,
+  restoreSubscriptionBodySchema,
+} from "../../schemas/subscriptions";
 import { supabaseAdmin } from "../../services/supabase";
-
-const restoreSubscriptionBodySchema = z.object({
-  revenuecat_customer_id: z
-    .string()
-    .min(1, "RevenueCat customer ID is required"),
-  subscription_status: z.enum(["free", "trial", "active", "expired"]),
-  subscription_expires_at: z.string().datetime().optional(),
-  subscription_product_id: z.string().optional(),
-});
-
-type RestoreSubscriptionBody = z.infer<typeof restoreSubscriptionBodySchema>;
 
 const restoreSubscriptionFastifySchema = {
   description: "Restore user subscription from RevenueCat",
   tags: ["subscriptions"],
   security: [{ bearerAuth: [] }],
-  body: {
-    type: "object",
-    required: ["revenuecat_customer_id", "subscription_status"],
-    properties: {
-      revenuecat_customer_id: {
-        type: "string",
-        description: "RevenueCat customer ID",
-      },
-      subscription_status: {
-        type: "string",
-        enum: ["free", "trial", "active", "expired"],
-        description: "Current subscription status",
-      },
-      subscription_expires_at: {
-        type: "string",
-        format: "date-time",
-        description: "Subscription expiration date",
-      },
-      subscription_product_id: {
-        type: "string",
-        description: "Product ID (monthly/annual)",
-      },
-    },
-  },
+  body: restoreSubscriptionBodySchema,
 };
 
-async function prod(request: FastifyRequest, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Body: RestoreSubscriptionBody }>,
+  reply: FastifyReply
+) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    const body = restoreSubscriptionBodySchema.parse(request.body);
+    const body = request.body;
 
     // Check if this RevenueCat customer ID is already linked to another user
     const { data: existingUser, error: checkError } = await supabaseAdmin

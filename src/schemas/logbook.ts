@@ -1,3 +1,44 @@
+import { Static, Type } from "@sinclair/typebox";
+
+// TypeBox schemas
+export const createLogbookBodySchema = Type.Object({
+  location_name: Type.String({ minLength: 1 }),
+  exit_type: Type.Optional(
+    Type.Union([
+      Type.Literal("Building"),
+      Type.Literal("Antenna"),
+      Type.Literal("Span"),
+      Type.Literal("Earth"),
+    ])
+  ),
+  delay_seconds: Type.Optional(Type.Integer({ minimum: 0 })),
+  jump_date: Type.Optional(Type.String({ format: "date" })),
+  details: Type.Optional(Type.String()),
+});
+
+export const updateLogbookBodySchema = Type.Object({
+  location_name: Type.Optional(Type.String({ minLength: 1 })),
+  exit_type: Type.Optional(
+    Type.Union([
+      Type.Literal("Building"),
+      Type.Literal("Antenna"),
+      Type.Literal("Span"),
+      Type.Literal("Earth"),
+      Type.Null(),
+    ])
+  ),
+  delay_seconds: Type.Optional(
+    Type.Union([Type.Integer({ minimum: 0 }), Type.Null()])
+  ),
+  jump_date: Type.Optional(
+    Type.Union([Type.String({ format: "date" }), Type.Null()])
+  ),
+  details: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+});
+
+export type CreateLogbookBody = Static<typeof createLogbookBodySchema>;
+export type UpdateLogbookBody = Static<typeof updateLogbookBodySchema>;
+
 // Response data schema for GET /api/v1/logbook
 
 export const LogbookResponseData = {

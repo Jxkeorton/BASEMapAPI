@@ -1,73 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { authenticateUser, requireAdmin } from "../../../middleware/auth";
+import {
+  AdminSubmissionsQuery,
+  adminSubmissionsQuerySchema,
+} from "../../../schemas/submissions";
 import { supabaseAdmin } from "../../../services/supabase";
-
-// Query validation schema
-const submissionsQuerySchema = z.object({
-  status: z.enum(["pending", "approved", "rejected"]).optional(),
-  submission_type: z.enum(["new", "update"]).optional(),
-  user_id: z.string().uuid().optional(),
-  limit: z.coerce.number().min(1).max(100).optional().default(50),
-  offset: z.coerce.number().min(0).optional().default(0),
-  sort_by: z
-    .enum(["created_at", "name", "status"])
-    .optional()
-    .default("created_at"),
-  sort_order: z.enum(["asc", "desc"]).optional().default("desc"),
-});
-
-type SubmissionsQuery = z.infer<typeof submissionsQuerySchema>;
 
 const submissionsFastifySchema = {
   description: "Get all location submissions for admin review",
   tags: ["admin", "submissions"],
   security: [{ bearerAuth: [] }],
-  querystring: {
-    type: "object",
-    properties: {
-      status: {
-        type: "string",
-        enum: ["pending", "approved", "rejected"],
-        description: "Filter by submission status",
-      },
-      submission_type: {
-        type: "string",
-        enum: ["new", "update"],
-        description: "Filter by submission type",
-      },
-      user_id: {
-        type: "string",
-        format: "uuid",
-        description: "Filter by user ID",
-      },
-      limit: {
-        type: "number",
-        minimum: 1,
-        maximum: 100,
-        default: 50,
-        description: "Number of submissions to return",
-      },
-      offset: {
-        type: "number",
-        minimum: 0,
-        default: 0,
-        description: "Number of submissions to skip",
-      },
-      sort_by: {
-        type: "string",
-        enum: ["created_at", "name", "status"],
-        default: "created_at",
-        description: "Field to sort by",
-      },
-      sort_order: {
-        type: "string",
-        enum: ["asc", "desc"],
-        default: "desc",
-        description: "Sort order",
-      },
-    },
-  },
+  querystring: adminSubmissionsQuerySchema,
   response: {
     200: {
       type: "object",
@@ -95,14 +38,20 @@ const submissionsFastifySchema = {
 };
 
 async function getSubmissions(
-  request: FastifyRequest<{ Querystring: SubmissionsQuery }>,
+  request: FastifyRequest<{ Querystring: AdminSubmissionsQuery }>,
   reply: FastifyReply
 ) {
   try {
-    // Validate query parameters
-    const query = submissionsQuerySchema.parse(request.query);
+    const {
+      status,
+      submission_type,
+      user_id,
+      limit = 50,
+      offset = 0,
+      sort_by = "created_at",
+      sort_order = "desc",
+    } = request.query;
 
-    // Build the select query with related data
     let supabaseQuery = supabaseAdmin.from("location_submission_requests")
       .select(`
         id,
@@ -146,31 +95,25 @@ async function getSubmissions(
       `);
 
     // Apply filters
-    if (query.status) {
-      supabaseQuery = supabaseQuery.eq("status", query.status);
+    if (status) {
+      supabaseQuery = supabaseQuery.eq("status", status);
     }
 
-    if (query.submission_type) {
-      supabaseQuery = supabaseQuery.eq(
-        "submission_type",
-        query.submission_type
-      );
+    if (submission_type) {
+      supabaseQuery = supabaseQuery.eq("submission_type", submission_type);
     }
 
-    if (query.user_id) {
-      supabaseQuery = supabaseQuery.eq("user_id", query.user_id);
+    if (user_id) {
+      supabaseQuery = supabaseQuery.eq("user_id", user_id);
     }
 
     // Apply sorting
-    supabaseQuery = supabaseQuery.order(query.sort_by, {
-      ascending: query.sort_order === "asc",
+    supabaseQuery = supabaseQuery.order(sort_by, {
+      ascending: sort_order === "asc",
     });
 
     // Apply pagination
-    supabaseQuery = supabaseQuery.range(
-      query.offset,
-      query.offset + query.limit - 1
-    );
+    supabaseQuery = supabaseQuery.range(offset, offset + limit - 1);
 
     const { data: submissions, error } = await supabaseQuery;
 
@@ -185,14 +128,14 @@ async function getSubmissions(
       .select("*", { count: "exact", head: true });
 
     // Apply same filters for count
-    if (query.status) {
-      countQuery = countQuery.eq("status", query.status);
+    if (status) {
+      countQuery = countQuery.eq("status", status);
     }
-    if (query.submission_type) {
-      countQuery = countQuery.eq("submission_type", query.submission_type);
+    if (submission_type) {
+      countQuery = countQuery.eq("submission_type", submission_type);
     }
-    if (query.user_id) {
-      countQuery = countQuery.eq("user_id", query.user_id);
+    if (user_id) {
+      countQuery = countQuery.eq("user_id", user_id);
     }
 
     const { count: totalCount, error: countError } = await countQuery;
@@ -223,7 +166,7 @@ async function getSubmissions(
       );
     }
 
-    const hasMore = (totalCount || 0) > query.offset + query.limit;
+    const hasMore = (totalCount || 0) > offset + limit;
 
     return reply.send({
       success: true,

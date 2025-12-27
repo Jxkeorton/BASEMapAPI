@@ -1,50 +1,14 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
+import {
+  RevenueCatWebhookBody,
+  revenueCatWebhookBodySchema,
+} from "../../schemas/subscriptions";
 import { supabaseAdmin } from "../../services/supabase";
-
-// RevenueCat webhook validation schema
-const revenueCatWebhookSchema = z.object({
-  api_version: z.string(),
-  event: z.object({
-    type: z.string(),
-    app_user_id: z.string(),
-    product_id: z.string().optional(),
-    period_type: z.string().optional(),
-    purchased_at_ms: z.number().optional(),
-    expiration_at_ms: z.number().optional(),
-    is_trial_period: z.boolean().optional(),
-    price: z.number().optional(),
-    currency: z.string().optional(),
-  }),
-});
-
-type RevenueCatWebhookBody = z.infer<typeof revenueCatWebhookSchema>;
 
 const webhookFastifySchema = {
   description: "RevenueCat webhook for subscription updates",
   tags: ["subscriptions"],
-  body: {
-    type: "object",
-    required: ["api_version", "event"],
-    properties: {
-      api_version: { type: "string" },
-      event: {
-        type: "object",
-        required: ["type", "app_user_id"],
-        properties: {
-          type: { type: "string", description: "Event type from RevenueCat" },
-          app_user_id: { type: "string", description: "User ID from your app" },
-          product_id: { type: "string" },
-          period_type: { type: "string" },
-          purchased_at_ms: { type: "number" },
-          expiration_at_ms: { type: "number" },
-          is_trial_period: { type: "boolean" },
-          price: { type: "number" },
-          currency: { type: "string" },
-        },
-      },
-    },
-  },
+  body: revenueCatWebhookBodySchema,
 };
 
 async function prod(
@@ -52,8 +16,7 @@ async function prod(
   reply: FastifyReply
 ) {
   try {
-    // Validate request body
-    const body = revenueCatWebhookSchema.parse(request.body);
+    const body = request.body;
     const { event } = body;
 
     // Map RevenueCat event types to subscription statuses

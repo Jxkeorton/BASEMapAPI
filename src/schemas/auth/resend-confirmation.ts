@@ -1,21 +1,26 @@
+import { Static, Type } from "@sinclair/typebox";
+
+export const resendConfirmationBodySchema = Type.Object({
+  email: Type.String({ format: "email" }),
+});
+
+export const resendConfirmationResponseSchema = Type.Object({
+  success: Type.Literal(true),
+  message: Type.String(),
+});
+
+export type ResendConfirmationBody = Static<
+  typeof resendConfirmationBodySchema
+>;
+export type ResendConfirmationResponse = Static<
+  typeof resendConfirmationResponseSchema
+>;
+
 export const resendConfirmationFastifySchema = {
   description: "Resend email confirmation",
   tags: ["auth"],
-  body: {
-    type: "object",
-    required: ["email"],
-    properties: {
-      email: { type: "string", format: "email", description: "User email" },
-    },
-  },
+  body: resendConfirmationBodySchema,
   response: {
-    200: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        message: { type: "string" },
-      },
-      required: ["success", "message"],
-    },
+    200: resendConfirmationResponseSchema,
   },
-};
+} as const;

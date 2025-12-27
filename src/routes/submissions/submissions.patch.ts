@@ -1,26 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import {
+  UpdateSubmissionUserBody,
+  updateSubmissionUserBodySchema,
+} from "../../schemas/submissions";
 import { supabaseAdmin } from "../../services/supabase";
-
-const updateSubmissionSchema = z.object({
-  name: z.string().min(1, "Name is required").optional(),
-  country: z.string().optional(),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-  rock_drop_ft: z.number().int().positive().optional(),
-  total_height_ft: z.number().int().positive().optional(),
-  cliff_aspect: z.string().optional(),
-  anchor_info: z.string().optional(),
-  access_info: z.string().optional(),
-  notes: z.string().optional(),
-  opened_by_name: z.string().optional(),
-  opened_date: z.string().optional(),
-  video_link: z.string().url().optional().or(z.literal("")),
-  image_urls: z.array(z.string().url()).optional(),
-});
-
-type UpdateSubmissionBody = z.infer<typeof updateSubmissionSchema>;
 
 const updateSubmissionFastifySchema = {
   description: "Update a pending submission",
@@ -33,38 +17,20 @@ const updateSubmissionFastifySchema = {
       id: { type: "string", format: "uuid" },
     },
   },
-  body: {
-    type: "object",
-    properties: {
-      name: { type: "string", minLength: 1 },
-      country: { type: "string" },
-      latitude: { type: "number", minimum: -90, maximum: 90 },
-      longitude: { type: "number", minimum: -180, maximum: 180 },
-      rock_drop_ft: { type: "integer", minimum: 1 },
-      total_height_ft: { type: "integer", minimum: 1 },
-      cliff_aspect: { type: "string" },
-      anchor_info: { type: "string" },
-      access_info: { type: "string" },
-      notes: { type: "string" },
-      opened_by_name: { type: "string" },
-      opened_date: { type: "string" },
-      video_link: { type: "string", format: "uri" },
-      image_urls: { type: "array", items: { type: "string", format: "uri" } },
-    },
-  },
+  body: updateSubmissionUserBodySchema,
 };
 
 async function updateSubmission(
   request: FastifyRequest<{
     Params: { id: string };
-    Body: UpdateSubmissionBody;
+    Body: UpdateSubmissionUserBody;
   }>,
   reply: FastifyReply
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const { id } = request.params;
-    const updateData = updateSubmissionSchema.parse(request.body);
+    const updateData = request.body as Partial<UpdateSubmissionUserBody>;
 
     // Check if submission exists and belongs to user and is pending
     const { error: fetchError } = await supabaseAdmin
@@ -88,9 +54,10 @@ async function updateSubmission(
     Object.keys(updateData).forEach((key) => {
       if (
         key !== "image_urls" &&
-        updateData[key as keyof UpdateSubmissionBody] !== undefined
+        updateData[key as keyof UpdateSubmissionUserBody] !== undefined
       ) {
-        submissionUpdate[key] = updateData[key as keyof UpdateSubmissionBody];
+        submissionUpdate[key] =
+          updateData[key as keyof UpdateSubmissionUserBody];
       }
     });
 
@@ -164,7 +131,7 @@ async function updateSubmission(
 export default async function SubmissionsPatch(fastify: FastifyInstance) {
   fastify.patch<{
     Params: { id: string };
-    Body: UpdateSubmissionBody;
+    Body: UpdateSubmissionUserBody;
   }>("/locations/submissions/:id", {
     schema: updateSubmissionFastifySchema,
     preHandler: authenticateUser,

@@ -1,31 +1,17 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
-import { SubmissionsResponseData } from "../../schemas/submissions";
+import {
+  GetSubmissionsQuery,
+  SubmissionsResponseData,
+  getSubmissionsQuerySchema,
+} from "../../schemas/submissions";
 import { supabaseAdmin } from "../../services/supabase";
-
-const getSubmissionsQuerySchema = z.object({
-  status: z.enum(["pending", "approved", "rejected"]).optional(),
-  submission_type: z.enum(["new", "update"]).optional(),
-  limit: z.coerce.number().min(1).max(100).optional().default(20),
-  offset: z.coerce.number().min(0).optional().default(0),
-});
-
-type GetSubmissionsQuery = z.infer<typeof getSubmissionsQuerySchema>;
 
 const getSubmissionsFastifySchema = {
   description: "Get user submission requests",
   tags: ["locations"],
   security: [{ bearerAuth: [] }],
-  querystring: {
-    type: "object",
-    properties: {
-      status: { type: "string", enum: ["pending", "approved", "rejected"] },
-      submission_type: { type: "string", enum: ["new", "update"] },
-      limit: { type: "number", minimum: 1, maximum: 100, default: 20 },
-      offset: { type: "number", minimum: 0, default: 0 },
-    },
-  },
+  querystring: getSubmissionsQuerySchema,
   response: {
     200: {
       type: "object",
@@ -43,7 +29,7 @@ async function getUserSubmissions(
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
-    const query = getSubmissionsQuerySchema.parse(request.query);
+    const { status, submission_type, limit = 20, offset = 0 } = request.query;
 
     // Build query
     let supabaseQuery = supabaseAdmin
@@ -57,18 +43,15 @@ async function getUserSubmissions(
       )
       .eq("user_id", authenticatedRequest.user.id)
       .order("created_at", { ascending: false })
-      .range(query.offset, query.offset + query.limit - 1);
+      .range(offset, offset + limit - 1);
 
     // Apply filters
-    if (query.status) {
-      supabaseQuery = supabaseQuery.eq("status", query.status);
+    if (status) {
+      supabaseQuery = supabaseQuery.eq("status", status);
     }
 
-    if (query.submission_type) {
-      supabaseQuery = supabaseQuery.eq(
-        "submission_type",
-        query.submission_type
-      );
+    if (submission_type) {
+      supabaseQuery = supabaseQuery.eq("submission_type", submission_type);
     }
 
     const { data: submissions, error } = await supabaseQuery;
@@ -83,14 +66,15 @@ async function getUserSubmissions(
       .select("*", { count: "exact", head: true })
       .eq("user_id", authenticatedRequest.user.id);
 
-    if (query.status) countQuery = countQuery.eq("status", query.status);
-    if (query.submission_type)
-      countQuery = countQuery.eq("submission_type", query.submission_type);
+    if (status) countQuery = countQuery.eq("status", status);
+    if (submission_type)
+      countQuery = countQuery.eq("submission_type", submission_type);
 
     const { count, error: countError } = await countQuery;
 
     if (countError) {
       request.log.error("⚠️ Error getting total count:", countError.message);
+      throw error;
     }
 
     // Transform data to flatten structure and sort images
@@ -105,7 +89,7 @@ async function getUserSubmissions(
       locations: undefined,
     }));
 
-    const hasMore = (count || 0) > query.offset + query.limit;
+    const hasMore = (count || 0) > offset + limit;
 
     return reply.send({
       success: true,

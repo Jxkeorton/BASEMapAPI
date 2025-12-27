@@ -1,55 +1,20 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import {
   AuthenticatedRequest,
   authenticateUser,
   requireAdmin,
 } from "../../../middleware/auth";
+import {
+  CreateLocationBody,
+  createLocationBodySchema,
+} from "../../../schemas/locations";
 import { supabaseAdmin } from "../../../services/supabase";
-
-const createLocationSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  country: z.string().optional(),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  rock_drop_ft: z.number().int().positive().optional(),
-  total_height_ft: z.number().int().positive().optional(),
-  cliff_aspect: z.string().optional(),
-  anchor_info: z.string().optional(),
-  access_info: z.string().optional(),
-  notes: z.string().optional(),
-  opened_by_name: z.string().optional(),
-  opened_date: z.string().optional(),
-  video_link: z.string().url().optional().or(z.literal("")),
-  is_hidden: z.boolean().optional().default(false),
-});
-
-type CreateLocationBody = z.infer<typeof createLocationSchema>;
 
 const createLocationFastifySchema = {
   description: "Create a new BASE jumping location (Admin only)",
   tags: ["admin", "locations"],
   security: [{ bearerAuth: [] }],
-  body: {
-    type: "object",
-    required: ["name", "latitude", "longitude"],
-    properties: {
-      name: { type: "string", minLength: 1 },
-      country: { type: "string" },
-      latitude: { type: "number", minimum: -90, maximum: 90 },
-      longitude: { type: "number", minimum: -180, maximum: 180 },
-      rock_drop_ft: { type: "integer", minimum: 1 },
-      total_height_ft: { type: "integer", minimum: 1 },
-      cliff_aspect: { type: "string" },
-      anchor_info: { type: "string" },
-      access_info: { type: "string" },
-      notes: { type: "string" },
-      opened_by_name: { type: "string" },
-      opened_date: { type: "string" },
-      video_link: { type: "string", format: "uri" },
-      is_hidden: { type: "boolean", default: false },
-    },
-  },
+  body: createLocationBodySchema,
 };
 
 // Create new location (Admin+ only)
@@ -60,8 +25,7 @@ async function createLocation(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    // Validate request body
-    const locationData = createLocationSchema.parse(request.body);
+    const locationData = request.body;
 
     // Insert into database
     const { data: newLocation, error } = await supabaseAdmin

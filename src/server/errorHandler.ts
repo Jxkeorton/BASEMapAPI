@@ -5,7 +5,6 @@ import {
   FastifyReply,
   FastifyRequest,
 } from "fastify";
-import { ZodError } from "zod";
 import type { ErrorResponse } from "../shared/ErrorResponse";
 
 export function registerErrorHandler(fastify: FastifyInstance) {
@@ -15,17 +14,6 @@ export function registerErrorHandler(fastify: FastifyInstance) {
         success: false,
         message: "Internal server error",
       };
-
-      // Zod validation error
-      if (error instanceof ZodError) {
-        fastify.log.warn({ err: error, url: request.url }, "Validation error");
-        response = {
-          success: false,
-          message: "Invalid request data",
-          details: error.issues,
-        };
-        return reply.code(400).send(response);
-      }
 
       // Fastify schema validation errors
       if (error.code === "FST_ERR_VALIDATION" && "validation" in error) {

@@ -1,16 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import { UnsaveLocationBody } from "../../schemas/locations";
 import { supabaseAdmin } from "../../services/supabase";
-
-const unsaveLocationBodySchema = z.object({
-  location_id: z
-    .number()
-    .int()
-    .positive("Location ID must be a positive integer"),
-});
-
-type UnsaveLocationBody = z.infer<typeof unsaveLocationBodySchema>;
 
 const unsaveLocationFastifySchema = {
   description: "Remove a location from user favorites",
@@ -37,17 +28,20 @@ const unsaveLocationFastifySchema = {
   },
 };
 
-async function prod(request: FastifyRequest, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Body: UnsaveLocationBody }>,
+  reply: FastifyReply
+) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    const body = unsaveLocationBodySchema.parse(request.body);
+    const { location_id } = request.body;
 
     // Get the location name for response message
     const { data: location, error: locationError } = await supabaseAdmin
       .from("locations")
       .select("id, name")
-      .eq("id", body.location_id)
+      .eq("id", location_id)
       .single();
 
     if (locationError || !location) {
@@ -59,7 +53,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .from("user_saved_locations")
       .delete()
       .eq("user_id", authenticatedRequest.user.id)
-      .eq("location_id", body.location_id)
+      .eq("location_id", location_id)
       .select("id")
       .single();
 

@@ -1,60 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import {
+  UpdateProfileBody,
+  updateProfileBodySchema,
+} from "../../schemas/profile";
 import { supabaseAdmin } from "../../services/supabase";
-
-const updateProfileBodySchema = z
-  .object({
-    name: z
-      .string()
-      .min(1, "Name must not be empty")
-      .max(100, "Name too long")
-      .optional(),
-    username: z
-      .string()
-      .min(3, "Username must be at least 3 characters")
-      .max(30, "Username must be less than 30 characters")
-      .optional(),
-    jump_number: z
-      .number()
-      .min(0, "Jump number must be positive")
-      .max(10000, "Jump number seems unrealistic")
-      .optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided for update",
-  });
-
-type UpdateProfileBody = z.infer<typeof updateProfileBodySchema>;
 
 const updateProfileFastifySchema = {
   description: "Update current user profile",
   tags: ["profile"],
   security: [{ bearerAuth: [] }],
-  body: {
-    type: "object",
-    properties: {
-      name: {
-        type: "string",
-        minLength: 1,
-        maxLength: 100,
-        description: "Display name",
-      },
-      username: {
-        type: "string",
-        minLength: 3,
-        maxLength: 30,
-        description: "Unique username",
-      },
-      jump_number: {
-        type: "number",
-        minimum: 0,
-        maximum: 10000,
-        description: "Total BASE jumps completed",
-      },
-    },
-    minProperties: 1,
-  },
+  body: updateProfileBodySchema,
   response: {
     200: {
       type: "object",
@@ -76,12 +32,22 @@ const updateProfileFastifySchema = {
   },
 };
 
-async function prod(request: FastifyRequest, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Body: UpdateProfileBody }>,
+  reply: FastifyReply
+) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    // Validate request body
-    const updates = updateProfileBodySchema.parse(request.body);
+    const updates = request.body as Partial<UpdateProfileBody>;
+
+    // Validate at least one field is provided
+    if (Object.keys(updates).length === 0) {
+      return reply.code(400).send({
+        success: false,
+        error: "At least one field must be provided for update",
+      });
+    }
 
     // Check if username is being updated and is already taken
     if (updates.username) {

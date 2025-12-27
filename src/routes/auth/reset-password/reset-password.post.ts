@@ -1,25 +1,18 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
-import { resetPasswordFastifySchema } from "../../../schemas/auth/reset-password";
+import {
+  ResetPasswordBody,
+  resetPasswordFastifySchema,
+} from "../../../schemas/auth/reset-password";
 import { supabaseClient } from "../../../services/supabase";
-
-const resetPasswordBodySchema = z.object({
-  email: z.string().email("Invalid email format"),
-});
-
-type ResetPasswordBody = z.infer<typeof resetPasswordBodySchema>;
 
 async function prod(
   request: FastifyRequest<{ Body: ResetPasswordBody }>,
   reply: FastifyReply
 ) {
   try {
-    // Validate request body
-    const body = resetPasswordBodySchema.parse(request.body);
+    const { email } = request.body;
 
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(
-      body.email
-    );
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
 
     if (error) {
       request.log.error("Error sending reset email:", error);

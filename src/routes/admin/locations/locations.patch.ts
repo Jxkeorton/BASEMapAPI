@@ -1,67 +1,23 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import {
   AuthenticatedRequest,
   authenticateUser,
   requireAdmin,
 } from "../../../middleware/auth";
+import {
+  LocationParams,
+  UpdateLocationBody,
+  locationParamsSchema,
+  updateLocationBodySchema,
+} from "../../../schemas/locations";
 import { supabaseAdmin } from "../../../services/supabase";
-
-// Validation schemas
-const updateLocationSchema = z.object({
-  name: z.string().min(1, "Name is required").optional(),
-  country: z.string().optional(),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-  rock_drop_ft: z.number().int().positive().optional(),
-  total_height_ft: z.number().int().positive().optional(),
-  cliff_aspect: z.string().optional(),
-  anchor_info: z.string().optional(),
-  access_info: z.string().optional(),
-  notes: z.string().optional(),
-  opened_by_name: z.string().optional(),
-  opened_date: z.string().optional(),
-  video_link: z.string().url().optional().or(z.literal("")),
-  is_hidden: z.boolean().optional(),
-});
-
-const locationParamsSchema = z.object({
-  locationId: z.coerce.number().int().positive(),
-});
-
-type UpdateLocationBody = z.infer<typeof updateLocationSchema>;
-type LocationParams = z.infer<typeof locationParamsSchema>;
 
 const updateLocationFastifySchema = {
   description: "Update an existing location (Admin only)",
   tags: ["admin", "locations"],
   security: [{ bearerAuth: [] }],
-  params: {
-    type: "object",
-    properties: {
-      locationId: { type: "integer", minimum: 1 },
-    },
-    required: ["locationId"],
-  },
-  body: {
-    type: "object",
-    properties: {
-      name: { type: "string", minLength: 1 },
-      country: { type: "string" },
-      latitude: { type: "number", minimum: -90, maximum: 90 },
-      longitude: { type: "number", minimum: -180, maximum: 180 },
-      rock_drop_ft: { type: "integer", minimum: 1 },
-      total_height_ft: { type: "integer", minimum: 1 },
-      cliff_aspect: { type: "string" },
-      anchor_info: { type: "string" },
-      access_info: { type: "string" },
-      notes: { type: "string" },
-      opened_by_name: { type: "string" },
-      opened_date: { type: "string" },
-      video_link: { type: "string", format: "uri" },
-      is_hidden: { type: "boolean" },
-    },
-  },
+  params: locationParamsSchema,
+  body: updateLocationBodySchema,
 };
 
 async function updateLocation(
@@ -69,12 +25,12 @@ async function updateLocation(
   reply: FastifyReply
 ) {
   try {
-    const { locationId } = locationParamsSchema.parse(request.params);
+    const { locationId } = request.params;
 
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    // Validate request body
-    const updateData = updateLocationSchema.parse(request.body);
+    // Get validated request body (Fastify already validated)
+    const updateData = request.body as Partial<UpdateLocationBody>;
 
     // Check if there's actually data to update
     if (Object.keys(updateData).length === 0) {

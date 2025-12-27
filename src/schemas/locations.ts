@@ -1,3 +1,59 @@
+import { Static, Type } from "@sinclair/typebox";
+
+// TypeBox schemas
+export const saveLocationBodySchema = Type.Object({
+  location_id: Type.Integer({ minimum: 1 }),
+});
+
+export const unsaveLocationBodySchema = Type.Object({
+  location_id: Type.Integer({ minimum: 1 }),
+});
+
+// Admin schemas
+export const createLocationBodySchema = Type.Object({
+  name: Type.String({ minLength: 1 }),
+  country: Type.Optional(Type.String()),
+  latitude: Type.Number({ minimum: -90, maximum: 90 }),
+  longitude: Type.Number({ minimum: -180, maximum: 180 }),
+  rock_drop_ft: Type.Optional(Type.Integer({ minimum: 1 })),
+  total_height_ft: Type.Optional(Type.Integer({ minimum: 1 })),
+  cliff_aspect: Type.Optional(Type.String()),
+  anchor_info: Type.Optional(Type.String()),
+  access_info: Type.Optional(Type.String()),
+  notes: Type.Optional(Type.String()),
+  opened_by_name: Type.Optional(Type.String()),
+  opened_date: Type.Optional(Type.String()),
+  video_link: Type.Optional(Type.String({ format: "uri" })),
+  is_hidden: Type.Optional(Type.Boolean()),
+});
+
+export const updateLocationBodySchema = Type.Object({
+  name: Type.Optional(Type.String({ minLength: 1 })),
+  country: Type.Optional(Type.String()),
+  latitude: Type.Optional(Type.Number({ minimum: -90, maximum: 90 })),
+  longitude: Type.Optional(Type.Number({ minimum: -180, maximum: 180 })),
+  rock_drop_ft: Type.Optional(Type.Integer({ minimum: 1 })),
+  total_height_ft: Type.Optional(Type.Integer({ minimum: 1 })),
+  cliff_aspect: Type.Optional(Type.String()),
+  anchor_info: Type.Optional(Type.String()),
+  access_info: Type.Optional(Type.String()),
+  notes: Type.Optional(Type.String()),
+  opened_by_name: Type.Optional(Type.String()),
+  opened_date: Type.Optional(Type.String()),
+  video_link: Type.Optional(Type.String({ format: "uri" })),
+  is_hidden: Type.Optional(Type.Boolean()),
+});
+
+export const locationParamsSchema = Type.Object({
+  locationId: Type.Integer({ minimum: 1 }),
+});
+
+export type SaveLocationBody = Static<typeof saveLocationBodySchema>;
+export type UnsaveLocationBody = Static<typeof unsaveLocationBodySchema>;
+export type CreateLocationBody = Static<typeof createLocationBodySchema>;
+export type UpdateLocationBody = Static<typeof updateLocationBodySchema>;
+export type LocationParams = Static<typeof locationParamsSchema>;
+
 // Response data schema for GET /api/v1/locations
 
 export const LocationsResponseData = {

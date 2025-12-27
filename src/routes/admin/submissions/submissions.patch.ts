@@ -1,91 +1,23 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import {
   AuthenticatedRequest,
   authenticateUser,
   requireAdmin,
 } from "../../../middleware/auth";
+import {
+  ReviewSubmissionBody,
+  SubmissionParams,
+  reviewSubmissionBodySchema,
+  submissionParamsSchema,
+} from "../../../schemas/submissions";
 import { supabaseAdmin } from "../../../services/supabase";
-
-// Validation schemas
-const submissionParamsSchema = z.object({
-  submissionId: z.string().uuid("Invalid submission ID format"),
-});
-
-const reviewSubmissionSchema = z.object({
-  status: z.enum(["approved", "rejected"], {
-    required_error: "Status is required",
-    invalid_type_error: "Status must be approved or rejected",
-  }),
-  admin_notes: z.string().optional(),
-  // For approved submissions, optionally override submission data
-  override_data: z
-    .object({
-      name: z.string().min(1).optional(),
-      country: z.string().optional(),
-      latitude: z.number().min(-90).max(90).optional(),
-      longitude: z.number().min(-180).max(180).optional(),
-      rock_drop_ft: z.number().int().positive().optional(),
-      total_height_ft: z.number().int().positive().optional(),
-      cliff_aspect: z.string().optional(),
-      anchor_info: z.string().optional(),
-      access_info: z.string().optional(),
-      notes: z.string().optional(),
-      opened_by_name: z.string().optional(),
-      opened_date: z.string().optional(),
-      video_link: z.string().url().optional().or(z.literal("")),
-    })
-    .optional(),
-});
-
-type SubmissionParams = z.infer<typeof submissionParamsSchema>;
-type ReviewSubmissionBody = z.infer<typeof reviewSubmissionSchema>;
 
 const reviewSubmissionFastifySchema = {
   description: "Review a location submission (approve or reject)",
   tags: ["admin", "submissions"],
   security: [{ bearerAuth: [] }],
-  params: {
-    type: "object",
-    properties: {
-      submissionId: { type: "string", format: "uuid" },
-    },
-    required: ["submissionId"],
-  },
-  body: {
-    type: "object",
-    required: ["status"],
-    properties: {
-      status: {
-        type: "string",
-        enum: ["approved", "rejected"],
-        description: "Review decision",
-      },
-      admin_notes: {
-        type: "string",
-        description: "Optional admin notes/feedback",
-      },
-      override_data: {
-        type: "object",
-        description: "Optional data overrides for approved submissions",
-        properties: {
-          name: { type: "string", minLength: 1 },
-          country: { type: "string" },
-          latitude: { type: "number", minimum: -90, maximum: 90 },
-          longitude: { type: "number", minimum: -180, maximum: 180 },
-          rock_drop_ft: { type: "integer", minimum: 1 },
-          total_height_ft: { type: "integer", minimum: 1 },
-          cliff_aspect: { type: "string" },
-          anchor_info: { type: "string" },
-          access_info: { type: "string" },
-          notes: { type: "string" },
-          opened_by_name: { type: "string" },
-          opened_date: { type: "string" },
-          video_link: { type: "string", format: "uri" },
-        },
-      },
-    },
-  },
+  params: submissionParamsSchema,
+  body: reviewSubmissionBodySchema,
   response: {
     200: {
       type: "object",
@@ -114,8 +46,8 @@ async function reviewSubmission(
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
-    const { submissionId } = submissionParamsSchema.parse(request.params);
-    const reviewData = reviewSubmissionSchema.parse(request.body);
+    const { submissionId } = request.params;
+    const reviewData = request.body;
 
     // First, get the submission with all related data
     const { data: submission, error: fetchError } = await supabaseAdmin

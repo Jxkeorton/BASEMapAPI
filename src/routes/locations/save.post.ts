@@ -1,16 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import { SaveLocationBody } from "../../schemas/locations";
 import { supabaseAdmin } from "../../services/supabase";
-
-const saveLocationBodySchema = z.object({
-  location_id: z
-    .number()
-    .int()
-    .positive("Location ID must be a positive integer"),
-});
-
-type SaveLocationBody = z.infer<typeof saveLocationBodySchema>;
 
 const saveLocationFastifySchema = {
   description: "Save a location to user favorites",
@@ -45,17 +36,20 @@ const saveLocationFastifySchema = {
   },
 };
 
-async function prod(request: FastifyRequest, reply: FastifyReply) {
+async function prod(
+  request: FastifyRequest<{ Body: SaveLocationBody }>,
+  reply: FastifyReply
+) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    const body = saveLocationBodySchema.parse(request.body);
+    const { location_id } = request.body;
 
     // First, check if the location exists
     const { data: location, error: locationError } = await supabaseAdmin
       .from("locations")
       .select("id, name")
-      .eq("id", body.location_id)
+      .eq("id", location_id)
       .single();
 
     if (locationError || !location) {
@@ -67,7 +61,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .from("user_saved_locations")
       .select("id")
       .eq("user_id", authenticatedRequest.user.id)
-      .eq("location_id", body.location_id)
+      .eq("location_id", location_id)
       .single();
 
     if (checkError && checkError.code !== "PGRST116") {
@@ -84,7 +78,7 @@ async function prod(request: FastifyRequest, reply: FastifyReply) {
       .from("user_saved_locations")
       .insert({
         user_id: authenticatedRequest.user.id,
-        location_id: body.location_id,
+        location_id,
       })
       .select("id, location_id, created_at")
       .single();

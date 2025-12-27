@@ -1,15 +1,12 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
 import { SavedLocationsResponseData } from "../../schemas/locations";
 import { supabaseAdmin } from "../../services/supabase";
 
-const savedLocationsQuerySchema = z.object({
-  limit: z.coerce.number().min(1).max(100).optional().default(50),
-  offset: z.coerce.number().min(0).optional().default(0),
-});
-
-type SavedLocationsQuery = z.infer<typeof savedLocationsQuerySchema>;
+type SavedLocationsQuery = {
+  limit?: number;
+  offset?: number;
+};
 
 const savedLocationsFastifySchema = {
   description: "Get user saved locations with full location details",
@@ -51,7 +48,9 @@ async function prod(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    const query = savedLocationsQuerySchema.parse(request.query);
+    const query = request.query;
+    const limit = query.limit ?? 50;
+    const offset = query.offset ?? 0;
 
     // Get saved locations with full location details
     const { data: savedLocations, error } = await supabaseAdmin
@@ -82,7 +81,7 @@ async function prod(
       )
       .eq("user_id", authenticatedRequest.user.id)
       .order("created_at", { ascending: false })
-      .range(query.offset, query.offset + query.limit - 1);
+      .range(offset, offset + limit - 1);
 
     if (error) {
       request.log.error("Error fetching saved locations:", error);
@@ -106,7 +105,7 @@ async function prod(
       location: save.locations,
     }));
 
-    const hasMore = (totalCount || 0) > query.offset + query.limit;
+    const hasMore = (totalCount || 0) > offset + limit;
 
     // Return simple response
     return reply.send({

@@ -1,25 +1,20 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
-import { resendConfirmationFastifySchema } from "../../../schemas/auth/resend-confirmation";
+import {
+  ResendConfirmationBody,
+  resendConfirmationFastifySchema,
+} from "../../../schemas/auth/resend-confirmation";
 import { supabaseClient } from "../../../services/supabase";
-
-const resendConfirmationBodySchema = z.object({
-  email: z.string().email("Invalid email format"),
-});
-
-type ResendConfirmationBody = z.infer<typeof resendConfirmationBodySchema>;
 
 async function resendConfirmation(
   request: FastifyRequest<{ Body: ResendConfirmationBody }>,
   reply: FastifyReply
 ) {
   try {
-    // Validate request body
-    const body = resendConfirmationBodySchema.parse(request.body);
+    const { email } = request.body;
 
     const { error } = await supabaseClient.auth.resend({
       type: "signup",
-      email: body.email,
+      email,
       options: {
         emailRedirectTo: "base.map://",
       },

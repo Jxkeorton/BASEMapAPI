@@ -1,25 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { authenticateUser, requireSuperuser } from "../../../middleware/auth";
+import {
+  LocationParams,
+  locationParamsSchema,
+} from "../../../schemas/locations";
 import { supabaseAdmin } from "../../../services/supabase";
-
-const locationParamsSchema = z.object({
-  locationId: z.coerce.number().int().positive(),
-});
-
-type LocationParams = z.infer<typeof locationParamsSchema>;
 
 const deleteLocationFastifySchema = {
   description: "Delete a location (Superuser only)",
   tags: ["admin", "locations"],
   security: [{ bearerAuth: [] }],
-  params: {
-    type: "object",
-    properties: {
-      locationId: { type: "integer", minimum: 1 },
-    },
-    required: ["locationId"],
-  },
+  params: locationParamsSchema,
 };
 
 // Delete location (Superuser only)
@@ -28,7 +19,7 @@ async function deleteLocation(
   reply: FastifyReply
 ) {
   try {
-    const { locationId } = locationParamsSchema.parse(request.params);
+    const { locationId } = request.params;
 
     // Check if location exists and get its name for logging
     const { data: existingLocation, error: fetchError } = await supabaseAdmin

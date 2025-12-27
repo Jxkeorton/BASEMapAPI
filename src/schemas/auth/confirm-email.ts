@@ -1,50 +1,39 @@
+import { Static, Type } from "@sinclair/typebox";
+
+export const confirmEmailBodySchema = Type.Object({
+  token: Type.String(),
+  type: Type.Union([
+    Type.Literal("signup"),
+    Type.Literal("recovery"),
+    Type.Literal("email_change"),
+  ]),
+});
+
+export const confirmEmailResponseSchema = Type.Object({
+  success: Type.Literal(true),
+  data: Type.Object({
+    user: Type.Object({
+      id: Type.String(),
+      email: Type.String({ format: "email" }),
+      email_confirmed_at: Type.Union([Type.String(), Type.Null()]),
+    }),
+    session: Type.Object({
+      access_token: Type.String(),
+      refresh_token: Type.String(),
+      expires_at: Type.Number(),
+    }),
+    message: Type.String(),
+  }),
+});
+
+export type ConfirmEmailBody = Static<typeof confirmEmailBodySchema>;
+export type ConfirmEmailResponse = Static<typeof confirmEmailResponseSchema>;
+
 export const confirmEmailFastifySchema = {
   description: "Confirm email address",
   tags: ["auth"],
-  body: {
-    type: "object",
-    required: ["token", "type"],
-    properties: {
-      token: { type: "string", description: "Confirmation token from email" },
-      type: {
-        type: "string",
-        enum: ["signup", "recovery", "email_change"],
-        description: "Type of confirmation",
-      },
-    },
-  },
+  body: confirmEmailBodySchema,
   response: {
-    200: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "object",
-          properties: {
-            user: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-                email: { type: "string", format: "email" },
-                email_confirmed_at: { type: "string", nullable: true },
-              },
-              required: ["id", "email"],
-            },
-            session: {
-              type: "object",
-              properties: {
-                access_token: { type: "string" },
-                refresh_token: { type: "string" },
-                expires_at: { type: "number" },
-              },
-              required: ["access_token", "refresh_token", "expires_at"],
-            },
-            message: { type: "string" },
-          },
-          required: ["user", "session", "message"],
-        },
-      },
-      required: ["success", "data"],
-    },
+    200: confirmEmailResponseSchema,
   },
-};
+} as const;

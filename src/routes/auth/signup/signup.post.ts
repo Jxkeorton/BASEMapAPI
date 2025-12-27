@@ -1,15 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
-import { signUpFastifySchema } from "../../../schemas/auth/signUp";
+import { SignUpBody, signUpFastifySchema } from "../../../schemas/auth/signUp";
 import { supabaseClient } from "../../../services/supabase";
-
-const signUpBodySchema = z.object({
-  email: z.string().email("Invalid email format"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  name: z.string().min(1, "Name is required").optional(),
-});
-
-type SignUpBody = z.infer<typeof signUpBodySchema>;
 
 // Handler function - same pattern as signin
 async function prod(
@@ -17,15 +8,14 @@ async function prod(
   reply: FastifyReply
 ) {
   try {
-    // Validate request body
-    const body = signUpBodySchema.parse(request.body);
+    const { email, password, name } = request.body;
 
     const { data, error } = await supabaseClient.auth.signUp({
-      email: body.email,
-      password: body.password,
+      email,
+      password,
       options: {
         data: {
-          name: body.name,
+          name,
         },
         emailRedirectTo: "base.map://",
       },

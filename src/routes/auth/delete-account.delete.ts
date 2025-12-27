@@ -1,8 +1,10 @@
 import { AuthError, User } from "@supabase/supabase-js";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
-import { deleteAccountFastifySchema } from "../../schemas/auth/delete";
+import {
+  DeleteAccountBody,
+  deleteAccountFastifySchema,
+} from "../../schemas/auth/delete";
 import { supabaseAdmin } from "../../services/supabase";
 
 /**
@@ -76,19 +78,6 @@ async function verifyUserIdentity(
   }
 }
 
-const deleteAccountBodySchema = z.object({
-  confirmation: z.string().min(1, "Confirmation is required"),
-  password: z
-    .string()
-    .min(6, "Password is required for account deletion")
-    .optional(),
-  verification_method: z
-    .enum(["password", "reauthentication", "trusted_session"])
-    .optional(),
-});
-
-type DeleteAccountBody = z.infer<typeof deleteAccountBodySchema>;
-
 async function deleteAccount(
   request: FastifyRequest<{ Body: DeleteAccountBody }>,
   reply: FastifyReply
@@ -97,11 +86,10 @@ async function deleteAccount(
     const authenticatedRequest = request as AuthenticatedRequest;
     const userId = authenticatedRequest.user.id;
 
-    // Validate request body
-    const body = deleteAccountBodySchema.parse(request.body);
+    const { confirmation, password, verification_method } = request.body;
 
     // Check confirmation text
-    if (body.confirmation.toUpperCase() !== "DELETE") {
+    if (confirmation.toUpperCase() !== "DELETE") {
       throw new Error(
         'Confirmation must be "DELETE" to proceed with account deletion'
       );
@@ -110,8 +98,8 @@ async function deleteAccount(
     // Verify user identity based on their authentication method
     const identityVerified = await verifyUserIdentity(
       authenticatedRequest.user,
-      body.password,
-      body.verification_method
+      password,
+      verification_method
     );
 
     if (!identityVerified.success) {

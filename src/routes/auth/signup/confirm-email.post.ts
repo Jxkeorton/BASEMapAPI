@@ -1,21 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
-import { confirmEmailFastifySchema } from "../../../schemas/auth/confirm-email";
+import {
+  ConfirmEmailBody,
+  confirmEmailFastifySchema,
+} from "../../../schemas/auth/confirm-email";
 import { supabaseClient } from "../../../services/supabase";
-
-const confirmEmailBodySchema = z.object({
-  token: z.string(),
-  type: z.enum(["signup", "recovery", "email_change"]),
-});
-
-type ConfirmEmailBody = z.infer<typeof confirmEmailBodySchema>;
 
 async function confirmEmail(
   request: FastifyRequest<{ Body: ConfirmEmailBody }>,
   reply: FastifyReply
 ) {
   try {
-    const { token, type } = confirmEmailBodySchema.parse(request.body);
+    const { token, type } = request.body;
 
     const { data, error } = await supabaseClient.auth.verifyOtp({
       token_hash: token,

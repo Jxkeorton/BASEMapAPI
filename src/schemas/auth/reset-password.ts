@@ -1,59 +1,48 @@
+import { Static, Type } from "@sinclair/typebox";
+
+export const resetPasswordBodySchema = Type.Object({
+  email: Type.String({ format: "email" }),
+});
+
+export const resetPasswordResponseSchema = Type.Object({
+  success: Type.Literal(true),
+  message: Type.String(),
+});
+
+export const resetPasswordConfirmBodySchema = Type.Object({
+  access_token: Type.String(),
+  refresh_token: Type.String(),
+  new_password: Type.String({ minLength: 6 }),
+});
+
+export const resetPasswordConfirmResponseSchema = Type.Object({
+  success: Type.Literal(true),
+  message: Type.String(),
+});
+
+export type ResetPasswordBody = Static<typeof resetPasswordBodySchema>;
+export type ResetPasswordResponse = Static<typeof resetPasswordResponseSchema>;
+export type ResetPasswordConfirmBody = Static<
+  typeof resetPasswordConfirmBodySchema
+>;
+export type ResetPasswordConfirmResponse = Static<
+  typeof resetPasswordConfirmResponseSchema
+>;
+
 export const resetPasswordFastifySchema = {
   description: "Send password reset email to user",
   tags: ["auth"],
-  body: {
-    type: "object",
-    required: ["email"],
-    properties: {
-      email: {
-        type: "string",
-        format: "email",
-        description: "User email address",
-      },
-    },
-  },
+  body: resetPasswordBodySchema,
   response: {
-    200: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        message: { type: "string" },
-      },
-      required: ["success", "message"],
-    },
+    200: resetPasswordResponseSchema,
   },
-};
+} as const;
 
 export const resetPasswordConfirmFastifySchema = {
   description: "Confirm password reset with new password",
   tags: ["auth"],
-  body: {
-    type: "object",
-    required: ["access_token", "refresh_token", "new_password"],
-    properties: {
-      access_token: {
-        type: "string",
-        description: "Access token from reset email",
-      },
-      refresh_token: {
-        type: "string",
-        description: "Refresh token from reset email",
-      },
-      new_password: {
-        type: "string",
-        minLength: 6,
-        description: "New password",
-      },
-    },
-  },
+  body: resetPasswordConfirmBodySchema,
   response: {
-    200: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        message: { type: "string" },
-      },
-      required: ["success", "message"],
-    },
+    200: resetPasswordConfirmResponseSchema,
   },
-};
+} as const;

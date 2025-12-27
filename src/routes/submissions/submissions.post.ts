@@ -1,59 +1,16 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { AuthenticatedRequest, authenticateUser } from "../../middleware/auth";
+import {
+  CreateSubmissionBody,
+  createSubmissionBodySchema,
+} from "../../schemas/submissions";
 import { supabaseAdmin } from "../../services/supabase";
-
-const createSubmissionSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  country: z.string().optional(),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  rock_drop_ft: z.number().int().positive().optional(),
-  total_height_ft: z.number().int().positive().optional(),
-  cliff_aspect: z.string().optional(),
-  anchor_info: z.string().optional(),
-  access_info: z.string().optional(),
-  notes: z.string().optional(),
-  opened_by_name: z.string().optional(),
-  opened_date: z.string().optional(),
-  video_link: z.string().url().optional().or(z.literal("")),
-  submission_type: z.enum(["new", "update"]).default("new"),
-  existing_location_id: z.number().int().positive().optional(),
-  image_urls: z.array(z.string().url()).optional().default([]),
-});
-
-type CreateSubmissionBody = z.infer<typeof createSubmissionSchema>;
 
 const createSubmissionFastifySchema = {
   description: "Submit a new location or update request",
   tags: ["locations"],
   security: [{ bearerAuth: [] }],
-  body: {
-    type: "object",
-    required: ["name", "latitude", "longitude"],
-    properties: {
-      name: { type: "string", minLength: 1 },
-      country: { type: "string" },
-      latitude: { type: "number", minimum: -90, maximum: 90 },
-      longitude: { type: "number", minimum: -180, maximum: 180 },
-      rock_drop_ft: { type: "integer", minimum: 1 },
-      total_height_ft: { type: "integer", minimum: 1 },
-      cliff_aspect: { type: "string" },
-      anchor_info: { type: "string" },
-      access_info: { type: "string" },
-      notes: { type: "string" },
-      opened_by_name: { type: "string" },
-      opened_date: { type: "string" },
-      video_link: { type: "string", format: "uri" },
-      submission_type: {
-        type: "string",
-        enum: ["new", "update"],
-        default: "new",
-      },
-      existing_location_id: { type: "integer", minimum: 1 },
-      image_urls: { type: "array", items: { type: "string", format: "uri" } },
-    },
-  },
+  body: createSubmissionBodySchema,
   response: {
     201: {
       type: "object",
@@ -129,10 +86,8 @@ async function createSubmission(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    // Validate request body
-    const submissionData = createSubmissionSchema.parse(request.body);
+    const submissionData = request.body;
 
-    // Check submission limits
     const limitCheck = await checkSubmissionLimits(
       authenticatedRequest.user.id
     );

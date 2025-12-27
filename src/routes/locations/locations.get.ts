@@ -1,17 +1,13 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
 import { LocationsResponseData } from "../../schemas/locations";
 import { supabaseAdmin } from "../../services/supabase";
 
-// Simple validation schema - just optional filters
-const locationsQuerySchema = z.object({
-  country: z.string().optional(),
-  min_height: z.coerce.number().optional(),
-  max_height: z.coerce.number().optional(),
-  search: z.string().optional(),
-});
-
-type LocationsQuery = z.infer<typeof locationsQuerySchema>;
+type LocationsQuery = {
+  country?: string;
+  min_height?: number;
+  max_height?: number;
+  search?: string;
+};
 
 const locationsFastifySchema = {
   description: "Get all BASE jumping locations",
@@ -45,8 +41,7 @@ async function prod(
   reply: FastifyReply
 ) {
   try {
-    // Validate query parameters
-    const query = locationsQuerySchema.parse(request.query);
+    const query = request.query;
 
     // Build Supabase query
     let supabaseQuery = supabaseAdmin.from("locations").select("*");
