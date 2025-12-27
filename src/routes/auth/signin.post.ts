@@ -26,7 +26,6 @@ async function prod(request: FastifyRequest<{ Body: SignInBody }>, reply: Fastif
       throw error;
     }
 
-    // Return simple response
     return reply.send({
       success: true,
       data: {

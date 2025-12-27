@@ -70,7 +70,7 @@ export const authenticateUser = async (
 /**
  * Middleware to require specific role or higher
  */
-export const requireRole = (requiredRole: UserRole) => {
+const requireRole = (requiredRole: UserRole) => {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const authenticatedRequest = request as AuthenticatedRequest;
     
