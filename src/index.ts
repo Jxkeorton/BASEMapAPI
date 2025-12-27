@@ -1,18 +1,11 @@
-import cors from "@fastify/cors";
-import helmet from "@fastify/helmet";
-import rateLimit from "@fastify/rate-limit";
-import swagger from "@fastify/swagger";
-import swaggerUi from "@fastify/swagger-ui";
 import Fastify from "fastify";
 import { appConfig } from "./config";
-import { validateApiKey } from "./middleware/apiKey";
-import errorHandlerPlugin from "./plugins/errorHandler";
-import AdminLocationsRoutes from "./routes/admin/locations";
-import AdminSubmissionsRoutes from "./routes/admin/submissions";
-import AuthRoutes from "./routes/auth";
-import SubmissionRoutes from "./routes/submissions";
+import { registerErrorHandler } from "./server/errorHandler";
+import { registerPlugins } from "./server/plugins";
+import { registerRoutes } from "./server/routes";
 
 const fastify = Fastify({
+  pluginTimeout: 100000,
   logger: {
     level: appConfig.logging.level,
     ...(appConfig.nodeEnv === "development" && {
@@ -26,106 +19,19 @@ const fastify = Fastify({
       },
     }),
   },
+  ajv: {
+    customOptions: {
+      allErrors: true,
+    },
+  },
 });
 
 async function start() {
   try {
-    // Register plugins
-    await fastify.register(helmet);
-    await fastify.register(errorHandlerPlugin);
+    registerErrorHandler(fastify);
+    await registerPlugins(fastify);
+    await registerRoutes(fastify);
 
-    await fastify.register(cors, {
-      origin: appConfig.api.corsOrigin,
-      credentials: true,
-    });
-
-    await fastify.register(rateLimit, {
-      max: appConfig.rateLimit.max,
-      timeWindow: appConfig.rateLimit.timeWindow,
-    });
-
-    fastify.addHook("preHandler", async (request, reply) => {
-      if (request.url === "/health") {
-        return;
-      }
-
-      if (request.url.startsWith("/docs")) {
-        return;
-      }
-
-      await validateApiKey(request, reply);
-    });
-
-    // Swagger documentation
-    await fastify.register(swagger, {
-      openapi: {
-        info: {
-          title: "BASE Map API",
-          description: "API for BASE jumping locations and user management",
-          version: "1.0.0",
-        },
-        servers: [
-          {
-            url: `http://${appConfig.host}:${appConfig.port}`,
-            description: "Development server",
-          },
-        ],
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: "http",
-              scheme: "bearer",
-              bearerFormat: "JWT",
-            },
-          },
-        },
-      },
-    });
-
-    await fastify.register(swaggerUi, {
-      routePrefix: "/docs",
-      uiConfig: {
-        docExpansion: "list",
-        deepLinking: false,
-      },
-    });
-
-    // Health check
-    fastify.get("/health", async () => {
-      return { status: "ok", timestamp: new Date().toISOString() };
-    });
-
-    // Admin routes
-    await fastify.register(AdminLocationsRoutes);
-    await fastify.register(AdminSubmissionsRoutes);
-
-    // Submission routes
-    await fastify.register(SubmissionRoutes);
-
-    // Location routes
-    await fastify.register(import("./routes/locations/locations.get"));
-    await fastify.register(import("./routes/locations/save.post"));
-    await fastify.register(import("./routes/locations/unsave.delete"));
-    await fastify.register(import("./routes/locations/saved.get"));
-
-    // Auth routes
-    await fastify.register(AuthRoutes);
-
-    // Profile routes
-    await fastify.register(import("./routes/profile/profile.get"));
-    await fastify.register(import("./routes/profile/profile.patch"));
-
-    // Subscription routes
-    await fastify.register(import("./routes/subscriptions/webhook.post"));
-    await fastify.register(import("./routes/subscriptions/restore.post"));
-
-    // Logbook routes
-    await fastify.register(import("./routes/logbook/logbook.post"));
-    await fastify.register(import("./routes/logbook/logbook.patch"));
-    await fastify.register(import("./routes/logbook/logbook.get"));
-    await fastify.register(import("./routes/logbook/logbook.delete"));
-
-    // Start server
     await fastify.listen({
       host: appConfig.host,
       port: appConfig.port,
@@ -143,7 +49,6 @@ async function start() {
   }
 }
 
-// Graceful shutdown
 const gracefulShutdown = async (signal: string) => {
   fastify.log.info(`Received ${signal}, shutting down gracefully...`);
   await fastify.close();
