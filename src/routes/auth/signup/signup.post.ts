@@ -1,14 +1,26 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { SignUpBody, signUpFastifySchema } from "../../../schemas/auth/signUp";
-import { supabaseClient } from "../../../services/supabase";
+import { supabaseAdmin, supabaseClient } from "../../../services/supabase";
 
-// Handler function - same pattern as signin
 async function prod(
   request: FastifyRequest<{ Body: SignUpBody }>,
   reply: FastifyReply
 ) {
   try {
     const { email, password, name } = request.body;
+
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const userExists = existingUsers?.users.some(
+      (user) => user.email?.toLowerCase() === email.toLowerCase()
+    );
+
+    if (userExists) {
+      return reply.code(409).send({
+        success: false,
+        message: "An account with this email already exists",
+      });
+    }
 
     const { data, error } = await supabaseClient.auth.signUp({
       email,

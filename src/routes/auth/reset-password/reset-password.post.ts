@@ -12,10 +12,11 @@ async function prod(
   try {
     const { email } = request.body;
 
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: "base.map://reset-password-confirm",
+    });
 
     if (error) {
-      request.log.error("Error sending reset email:", error);
       throw error;
     }
 

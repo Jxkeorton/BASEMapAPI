@@ -11,10 +11,21 @@ export const signUpResponseSchema = Type.Object({
   data: Type.Object({
     user: Type.Object({
       id: Type.String(),
-      email: Type.Union([Type.String({ format: "email" }), Type.Null()]),
-      email_confirmed_at: Type.Union([Type.String(), Type.Null()]),
+      email: Type.String({ format: "email" }),
+      email_confirmed_at: Type.Optional(
+        Type.Union([Type.String(), Type.Null()])
+      ),
     }),
-    session: Type.Union([Type.Object({}), Type.Null()]),
+    session: Type.Optional(
+      Type.Union([
+        Type.Object({
+          access_token: Type.String(),
+          refresh_token: Type.String(),
+          expires_at: Type.Optional(Type.Number()),
+        }),
+        Type.Null(),
+      ])
+    ),
     requiresEmailConfirmation: Type.Boolean(),
     message: Type.String(),
   }),
