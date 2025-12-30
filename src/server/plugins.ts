@@ -21,7 +21,11 @@ export async function registerPlugins(fastify: FastifyInstance) {
   });
 
   fastify.addHook("preHandler", async (request, reply) => {
-    if (request.url === "/health" || request.url.startsWith("/docs")) {
+    if (
+      request.url === "/health" ||
+      request.url.startsWith("/docs") ||
+      request.url === "/subscriptions/webhook"
+    ) {
       return;
     }
     await validateApiKey(request, reply);

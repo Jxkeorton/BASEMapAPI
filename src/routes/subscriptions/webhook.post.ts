@@ -16,6 +16,13 @@ async function prod(
   reply: FastifyReply
 ) {
   try {
+    const authHeader = request.headers.authorization;
+    const expectedAuth = process.env.REVENUECAT_WEBHOOK_SECRET;
+
+    if (expectedAuth && authHeader !== `Bearer ${expectedAuth}`) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+
     const body = request.body;
     const { event } = body;
 
