@@ -18,7 +18,6 @@ export const authenticateUser = async (
   reply: FastifyReply
 ) => {
   try {
-    // Get token from Authorization header
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
