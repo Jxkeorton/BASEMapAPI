@@ -29,7 +29,6 @@ export const profileResponseDataSchema = Type.Object({
     Type.Null(),
   ]),
   subscription_updated_at: Type.String({ format: "date-time" }),
-  revenuecat_customer_id: Type.Union([Type.String(), Type.Null()]),
   created_at: Type.String({ format: "date-time" }),
   updated_at: Type.String({ format: "date-time" }),
 });
@@ -58,7 +57,6 @@ export const ProfileResponseData = {
       nullable: true,
     },
     subscription_updated_at: { type: "string", format: "date-time" },
-    revenuecat_customer_id: { type: "string", nullable: true },
     created_at: { type: "string", format: "date-time" },
     updated_at: { type: "string", format: "date-time" },
   },

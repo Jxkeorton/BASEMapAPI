@@ -16,20 +16,4 @@ export const revenueCatWebhookBodySchema = Type.Object({
   }),
 });
 
-// Restore subscription schema
-export const restoreSubscriptionBodySchema = Type.Object({
-  revenuecat_customer_id: Type.String({ minLength: 1 }),
-  subscription_status: Type.Union([
-    Type.Literal("free"),
-    Type.Literal("trial"),
-    Type.Literal("active"),
-    Type.Literal("expired"),
-  ]),
-  subscription_expires_at: Type.Optional(Type.String({ format: "date-time" })),
-  subscription_product_id: Type.Optional(Type.String()),
-});
-
 export type RevenueCatWebhookBody = Static<typeof revenueCatWebhookBodySchema>;
-export type RestoreSubscriptionBody = Static<
-  typeof restoreSubscriptionBodySchema
->;
