@@ -66,12 +66,11 @@ async function prod(
     const { data: updatedProfile, error } = await supabaseAdmin
       .from("profiles")
       .update({
-        revenuecat_customer_id: event.app_user_id,
         subscription_status: subscriptionStatus,
         subscription_expires_at: expirationDate,
         subscription_updated_at: new Date().toISOString(),
       })
-      .eq("id", event.app_user_id) // app_user_id should be the user's UUID
+      .eq("id", event.app_user_id)
       .select("id, email")
       .single();
 
