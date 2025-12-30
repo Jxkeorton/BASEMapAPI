@@ -17,7 +17,7 @@ async function prod(
 ) {
   try {
     const authHeader = request.headers.authorization;
-    const expectedAuth = process.env.REVENUECAT_WEBHOOK_SECRET;
+    const expectedAuth = `Bearer ${process.env.REVENUECAT_WEBHOOK_SECRET}`;
 
     if (expectedAuth && authHeader !== `Bearer ${expectedAuth}`) {
       return reply.code(401).send({ error: "Unauthorized" });
