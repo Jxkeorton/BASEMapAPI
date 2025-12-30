@@ -32,7 +32,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Subscription routes
   await fastify.register(import("../routes/subscriptions/webhook.post"));
-  await fastify.register(import("../routes/subscriptions/restore.post"));
 
   // Logbook routes
   await fastify.register(import("../routes/logbook/logbook.post"));
