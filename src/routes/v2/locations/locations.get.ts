@@ -1,0 +1,95 @@
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { LocationsResponseData } from "../../../schemas/locations";
+import { supabaseAdmin } from "../../../services/supabase";
+
+type LocationsQuery = {
+  country?: string;
+  min_height?: number;
+  max_height?: number;
+  search?: string;
+};
+
+const locationsFastifySchema = {
+  description: "Get all BASE jumping locations",
+  tags: ["locations"],
+  querystring: {
+    type: "object",
+    properties: {
+      country: { type: "string", description: "Filter by country" },
+      min_height: { type: "number", description: "Minimum height in feet" },
+      max_height: { type: "number", description: "Maximum height in feet" },
+      search: {
+        type: "string",
+        description: "Search in name, country, or notes",
+      },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: LocationsResponseData,
+      },
+    },
+  },
+};
+
+// Handler function
+async function prod(
+  request: FastifyRequest<{ Querystring: LocationsQuery }>,
+  reply: FastifyReply
+) {
+  try {
+    const query = request.query;
+
+    // Build Supabase query
+    let supabaseQuery = supabaseAdmin.from("locations").select("*");
+
+    // Apply filters
+    if (query.country) {
+      supabaseQuery = supabaseQuery.ilike("country", `%${query.country}%`);
+    }
+
+    if (query.min_height) {
+      supabaseQuery = supabaseQuery.gte("total_height_ft", query.min_height);
+    }
+
+    if (query.max_height) {
+      supabaseQuery = supabaseQuery.lte("total_height_ft", query.max_height);
+    }
+
+    if (query.search) {
+      supabaseQuery = supabaseQuery.or(
+        `name.ilike.%${query.search}%,country.ilike.%${query.search}%,notes.ilike.%${query.search}%`
+      );
+    }
+
+    // Order by name
+    supabaseQuery = supabaseQuery.order("name");
+
+    const { data, error } = await supabaseQuery;
+
+    if (error) {
+      request.log.error("Error fetching locations:", error);
+      throw error;
+    }
+
+    // Return simple response
+    return reply.send({
+      success: true,
+      data: data || [],
+    });
+  } catch (error) {
+    request.log.error("Error in locations endpoint:", error);
+    throw error;
+  }
+}
+
+export default async function LocationsGet(fastify: FastifyInstance) {
+  // Get all locations with optional filtering
+  fastify.get("/locations", {
+    schema: locationsFastifySchema,
+    handler: prod,
+  });
+}
