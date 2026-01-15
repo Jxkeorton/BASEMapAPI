@@ -4,6 +4,7 @@ import { registerErrorHandler } from "./server/errorHandler";
 import { registerPlugins } from "./server/plugins";
 import { registerRoutes } from "./server/routes";
 
+
 const fastify = Fastify({
   pluginTimeout: 100000,
   logger: {
@@ -30,6 +31,12 @@ async function start() {
   try {
     registerErrorHandler(fastify);
     await registerPlugins(fastify);
+    
+    // Health check
+    fastify.get("/health", async () => {
+      return { status: "ok", timestamp: new Date().toISOString() };
+    });
+    
     await registerRoutes(fastify);
 
     await fastify.listen({
