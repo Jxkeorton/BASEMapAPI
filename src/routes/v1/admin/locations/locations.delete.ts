@@ -1,9 +1,14 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { authenticateUser, requireSuperuser } from "../../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+  requireSuperuser,
+} from "../../../../middleware/auth";
 import {
   LocationParams,
   locationParamsSchema,
 } from "../../../../schemas/locations";
+import { logger } from "../../../../services/logger";
 import { supabaseAdmin } from "../../../../services/supabase";
 
 const deleteLocationFastifySchema = {
@@ -16,10 +21,16 @@ const deleteLocationFastifySchema = {
 // Delete location (Superuser only)
 async function deleteLocation(
   request: FastifyRequest<{ Params: LocationParams }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
+    const authenticatedRequest = request as AuthenticatedRequest;
     const { locationId } = request.params;
+
+    logger.info("Admin location deletion requested", {
+      adminUserId: authenticatedRequest.user.id,
+      locationId,
+    });
 
     // Check if location exists and get its name for logging
     const { data: existingLocation, error: fetchError } = await supabaseAdmin
@@ -45,7 +56,7 @@ async function deleteLocation(
 
     if (savedLocations && savedLocations.length > 0) {
       request.log.warn(
-        `Warning: Location has ${savedLocations.length} saved references`
+        `Warning: Location has ${savedLocations.length} saved references`,
       );
     }
 
@@ -58,6 +69,12 @@ async function deleteLocation(
     if (deleteError) {
       throw deleteError;
     }
+
+    logger.info("Admin location deleted", {
+      adminUserId: authenticatedRequest.user.id,
+      locationId,
+      locationName: existingLocation.name,
+    });
 
     return reply.send({
       success: true,

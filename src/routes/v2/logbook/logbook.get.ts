@@ -1,6 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import { LogbookResponseData } from "../../../schemas/logbook";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 type LogbookQuery = {
@@ -73,7 +77,7 @@ const logbookFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Querystring: LogbookQuery }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
@@ -82,6 +86,11 @@ async function prod(
     const limit = query.limit ?? 50;
     const offset = query.offset ?? 0;
     const order = query.order ?? "desc";
+
+    logger.info("Logbook fetch", {
+      userId: authenticatedRequest.user.id,
+      filters: { exitType: query.exit_type, search: query.search },
+    });
 
     // Build Supabase query
     let supabaseQuery = supabaseAdmin
@@ -92,7 +101,7 @@ async function prod(
     // Apply filters
     if (query.search) {
       supabaseQuery = supabaseQuery.or(
-        `location_name.ilike.%${query.search}%,details.ilike.%${query.search}%`
+        `location_name.ilike.%${query.search}%,details.ilike.%${query.search}%`,
       );
     }
 
@@ -132,6 +141,12 @@ async function prod(
     }
 
     const hasMore = (totalCount || 0) > offset + limit;
+
+    logger.info("Logbook entries returned", {
+      userId: authenticatedRequest.user.id,
+      count: entries?.length || 0,
+      totalCount,
+    });
 
     return reply.send({
       success: true,

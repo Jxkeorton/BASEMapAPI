@@ -1,5 +1,9 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const deleteSubmissionFastifySchema = {
@@ -26,11 +30,16 @@ const deleteSubmissionFastifySchema = {
 
 async function deleteSubmission(
   request: FastifyRequest<{ Params: { id: string } }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const { id } = request.params;
+
+    logger.info("Submission deletion requested", {
+      userId: authenticatedRequest.user.id,
+      submissionId: id,
+    });
 
     // Check if submission exists and belongs to user and is pending
     const { error: fetchError } = await supabaseAdmin
@@ -54,6 +63,11 @@ async function deleteSubmission(
     if (deleteError) {
       throw deleteError;
     }
+
+    logger.info("Submission deleted", {
+      userId: authenticatedRequest.user.id,
+      submissionId: id,
+    });
 
     return reply.send({
       success: true,

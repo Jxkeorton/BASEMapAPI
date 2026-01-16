@@ -1,9 +1,13 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import {
   UpdateLogbookBody,
   updateLogbookBodySchema,
 } from "../../../schemas/logbook";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 type UpdateLogbookEntryParams = {
@@ -29,13 +33,19 @@ async function prod(
     Params: UpdateLogbookEntryParams;
     Body: UpdateLogbookBody;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const { id } = request.params;
     const updates = request.body;
+
+    logger.info("Logbook entry update requested", {
+      userId: authenticatedRequest.user.id,
+      entryId: id,
+      fields: Object.keys(updates),
+    });
 
     // Check if entry exists and belongs to user
     const { data: existingEntry, error: checkError } = await supabaseAdmin
@@ -83,6 +93,11 @@ async function prod(
       request.log.error("Error updating logbook entry:", error);
       throw error;
     }
+
+    logger.info("Logbook entry updated", {
+      userId: authenticatedRequest.user.id,
+      entryId: id,
+    });
 
     return reply.send({
       success: true,

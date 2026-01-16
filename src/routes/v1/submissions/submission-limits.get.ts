@@ -1,5 +1,9 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const submissionLimitsFastifySchema = {
@@ -29,11 +33,13 @@ const submissionLimitsFastifySchema = {
 
 async function getSubmissionLimits(
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const userId = authenticatedRequest.user.id;
+
+    logger.info("Submission limits check", { userId });
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -73,6 +79,13 @@ async function getSubmissionLimits(
     const canSubmit =
       currentPendingCount < maxPendingSubmissions &&
       currentDailyCount < maxDailySubmissions;
+
+    logger.info("Submission limits returned", {
+      userId,
+      pendingCount: currentPendingCount,
+      dailyCount: currentDailyCount,
+      canSubmit,
+    });
 
     return reply.send({
       success: true,

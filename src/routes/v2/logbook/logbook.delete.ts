@@ -1,5 +1,9 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 type DeleteLogbookEntryParams = {
@@ -30,12 +34,17 @@ const deleteLogbookEntryFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Params: DeleteLogbookEntryParams }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const { id } = request.params;
+
+    logger.info("Logbook entry deletion requested", {
+      userId: authenticatedRequest.user.id,
+      entryId: id,
+    });
 
     // Check if entry exists and belongs to user
     const { data: existingEntry, error: checkError } = await supabaseAdmin
@@ -64,6 +73,12 @@ async function prod(
       request.log.error("Error deleting logbook entry:", error);
       throw error;
     }
+
+    logger.info("Logbook entry deleted", {
+      userId: authenticatedRequest.user.id,
+      entryId: id,
+      locationName: existingEntry.location_name,
+    });
 
     return reply.send({
       success: true,

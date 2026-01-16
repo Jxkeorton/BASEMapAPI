@@ -1,9 +1,13 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import {
   CreateSubmissionBody,
   createSubmissionBodySchema,
 } from "../../../schemas/submissions";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const createSubmissionFastifySchema = {
@@ -32,7 +36,7 @@ const createSubmissionFastifySchema = {
 
 // Helper function to check submission limits
 async function checkSubmissionLimits(
-  userId: string
+  userId: string,
 ): Promise<{ canSubmit: boolean; reason?: string }> {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -81,15 +85,21 @@ async function checkSubmissionLimits(
 // Submit location request
 async function createSubmission(
   request: FastifyRequest<{ Body: CreateSubmissionBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const submissionData = request.body;
 
+    logger.info("Submission creation started", {
+      userId: authenticatedRequest.user.id,
+      type: submissionData.submission_type,
+      locationName: submissionData.name,
+    });
+
     const limitCheck = await checkSubmissionLimits(
-      authenticatedRequest.user.id
+      authenticatedRequest.user.id,
     );
     if (!limitCheck.canSubmit) {
       throw new Error(limitCheck.reason || "Submission limit reached");
@@ -99,7 +109,7 @@ async function createSubmission(
     if (submissionData.submission_type === "update") {
       if (!submissionData.existing_location_id) {
         throw new Error(
-          "An existing location ID is required for update submissions"
+          "An existing location ID is required for update submissions",
         );
       }
 
@@ -159,17 +169,23 @@ async function createSubmission(
       if (imageError) {
         request.log.error(
           "⚠️ Warning: Failed to save images:",
-          imageError.message
+          imageError.message,
         );
         throw imageError;
       } else {
         request.log.info(
           "✅ Saved",
           imageRecords.length,
-          "images for submission"
+          "images for submission",
         );
       }
     }
+
+    logger.info("Submission created", {
+      userId: authenticatedRequest.user.id,
+      submissionId: newSubmission.id,
+      type: newSubmission.submission_type,
+    });
 
     return reply.code(201).send({
       success: true,

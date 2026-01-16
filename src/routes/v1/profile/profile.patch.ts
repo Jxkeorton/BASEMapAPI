@@ -1,9 +1,13 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import {
   UpdateProfileBody,
   updateProfileBodySchema,
 } from "../../../schemas/profile";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const updateProfileFastifySchema = {
@@ -34,12 +38,17 @@ const updateProfileFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Body: UpdateProfileBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const updates = request.body as Partial<UpdateProfileBody>;
+
+    logger.info("Profile update requested", {
+      userId: authenticatedRequest.user.id,
+      fields: Object.keys(updates),
+    });
 
     // Validate at least one field is provided
     if (Object.keys(updates).length === 0) {
@@ -88,6 +97,11 @@ async function prod(
       request.log.error("Error updating profile:", error);
       throw error;
     }
+
+    logger.info("Profile updated", {
+      userId: authenticatedRequest.user.id,
+      updatedFields: Object.keys(updates),
+    });
 
     // Return simple response
     return reply.send({

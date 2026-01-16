@@ -1,6 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import { UnsaveLocationBody } from "../../../schemas/locations";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const unsaveLocationFastifySchema = {
@@ -30,12 +34,17 @@ const unsaveLocationFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Body: UnsaveLocationBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const { location_id } = request.body;
+
+    logger.info("Location unsave requested", {
+      userId: authenticatedRequest.user.id,
+      locationId: location_id,
+    });
 
     // Get the location name for response message
     const { data: location, error: locationError } = await supabaseAdmin
@@ -61,6 +70,12 @@ async function prod(
       request.log.error("Error unsaving location:", error);
       throw error;
     }
+
+    logger.info("Location unsaved", {
+      userId: authenticatedRequest.user.id,
+      locationId: location_id,
+      locationName: location.name,
+    });
 
     return reply.send({
       success: true,

@@ -1,18 +1,24 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { SignUpBody, signUpFastifySchema } from "../../../../schemas/auth/signUp";
+import {
+  SignUpBody,
+  signUpFastifySchema,
+} from "../../../../schemas/auth/signUp";
+import { logger } from "../../../../services/logger";
 import { supabaseAdmin, supabaseClient } from "../../../../services/supabase";
 
 async function prod(
   request: FastifyRequest<{ Body: SignUpBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const { email, password, name } = request.body;
 
+    logger.info("User signup attempt", { email, name });
+
     // Check if user already exists
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const userExists = existingUsers?.users.some(
-      (user) => user.email?.toLowerCase() === email.toLowerCase()
+      (user) => user.email?.toLowerCase() === email.toLowerCase(),
     );
 
     if (userExists) {
@@ -44,6 +50,12 @@ async function prod(
 
     // Check if email confirmation is required
     const requiresConfirmation = !data.session;
+
+    logger.info("User signup successful", {
+      userId: data.user.id,
+      email: data.user.email,
+      requiresConfirmation,
+    });
 
     // Return simple response
     return reply.send({

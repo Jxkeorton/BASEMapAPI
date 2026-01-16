@@ -10,6 +10,7 @@ import {
   locationParamsSchema,
   updateLocationBodySchema,
 } from "../../../../schemas/locations";
+import { logger } from "../../../../services/logger";
 import { supabaseAdmin } from "../../../../services/supabase";
 
 const updateLocationFastifySchema = {
@@ -22,7 +23,7 @@ const updateLocationFastifySchema = {
 
 async function updateLocation(
   request: FastifyRequest<{ Params: LocationParams; Body: UpdateLocationBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const { locationId } = request.params;
@@ -31,6 +32,12 @@ async function updateLocation(
 
     // Get validated request body (Fastify already validated)
     const updateData = request.body as Partial<UpdateLocationBody>;
+
+    logger.info("Admin location update requested", {
+      adminUserId: authenticatedRequest.user.id,
+      locationId,
+      fields: Object.keys(updateData),
+    });
 
     // Check if there's actually data to update
     if (Object.keys(updateData).length === 0) {
@@ -62,6 +69,12 @@ async function updateLocation(
     if (updateError) {
       throw updateError;
     }
+
+    logger.info("Admin location updated", {
+      adminUserId: authenticatedRequest.user.id,
+      locationId,
+      locationName: updatedLocation.name,
+    });
 
     return reply.send({
       success: true,

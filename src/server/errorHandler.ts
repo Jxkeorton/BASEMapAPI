@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { AuthError, PostgrestError } from "@supabase/supabase-js";
 import {
   FastifyError,
@@ -10,6 +11,25 @@ import type { ErrorResponse } from "../shared/ErrorResponse";
 export function registerErrorHandler(fastify: FastifyInstance) {
   fastify.setErrorHandler(
     (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
+      Sentry.captureException(error, {
+        tags: {
+          errorType: getErrorType(error),
+          statusCode: getStatusCode(error).toString(),
+        },
+        extra: {
+          url: request.url,
+          method: request.method,
+          headers: request.headers,
+          query: request.query,
+          params: request.params,
+          userAgent: request.headers["user-agent"],
+        },
+        user: {
+          // Add user context if available from JWT or session
+          ip_address: request.ip,
+        },
+      });
+
       let response: ErrorResponse = {
         success: false,
         message: "Internal server error",
@@ -19,7 +39,7 @@ export function registerErrorHandler(fastify: FastifyInstance) {
       if (error.code === "FST_ERR_VALIDATION" && "validation" in error) {
         fastify.log.warn(
           { err: error, url: request.url },
-          "Schema validation error"
+          "Schema validation error",
         );
         response = {
           success: false,
@@ -82,6 +102,23 @@ export function registerErrorHandler(fastify: FastifyInstance) {
       }
 
       return reply.code(500).send(response);
-    }
+    },
   );
+}
+
+// Helper functions
+function getErrorType(error: FastifyError): string {
+  if (error.code === "FST_ERR_VALIDATION") return "validation";
+  if (error instanceof AuthError) return "auth";
+  if (error instanceof PostgrestError) return "database";
+  if (error.code?.startsWith("FST_")) return "fastify";
+  if (error.statusCode) return "http";
+  return "unhandled";
+}
+
+function getStatusCode(error: FastifyError): number {
+  if (error.code === "FST_ERR_VALIDATION") return 400;
+  if (error instanceof AuthError) return error.status || 401;
+  if (error instanceof PostgrestError) return 400;
+  return error.statusCode || 500;
 }
