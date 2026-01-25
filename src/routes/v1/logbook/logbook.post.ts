@@ -30,6 +30,7 @@ const createLogbookEntryFastifySchema = {
             delay_seconds: { type: "number" },
             jump_date: { type: "string" },
             details: { type: "string" },
+            images: { type: "array", items: { type: "string" } },
             created_at: { type: "string" },
           },
         },
@@ -45,8 +46,22 @@ async function prod(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    const { location_name, exit_type, delay_seconds, jump_date, details } =
-      request.body;
+    const {
+      location_name,
+      exit_type,
+      delay_seconds,
+      jump_date,
+      details,
+      images,
+    } = request.body;
+
+    // Validate max 5 images
+    if (images && images.length > 5) {
+      return reply.code(400).send({
+        success: false,
+        error: "Maximum 5 images allowed per logbook entry",
+      });
+    }
 
     logger.info("Logbook entry creation", {
       userId: authenticatedRequest.user.id,
@@ -73,6 +88,27 @@ async function prod(
       throw error;
     }
 
+    // Insert images if provided
+    let imageUrls: string[] = [];
+    if (images && images.length > 0) {
+      const imageInserts = images.map((url, index) => ({
+        logbook_entry_id: newEntry.id,
+        image_url: url,
+        display_order: index,
+      }));
+
+      const { error: imageError } = await supabaseAdmin
+        .from("logbook_images")
+        .insert(imageInserts);
+
+      if (imageError) {
+        request.log.error("Error inserting logbook images:", imageError);
+        // Don't throw - entry was created, just log the error
+      } else {
+        imageUrls = images;
+      }
+    }
+
     logger.info("Logbook entry created", {
       userId: authenticatedRequest.user.id,
       entryId: newEntry.id,
@@ -82,7 +118,10 @@ async function prod(
     return reply.code(201).send({
       success: true,
       message: "Logbook entry created successfully",
-      data: newEntry,
+      data: {
+        ...newEntry,
+        images: imageUrls,
+      },
     });
   } catch (error) {
     request.log.error("Error in create logbook entry endpoint:", error);

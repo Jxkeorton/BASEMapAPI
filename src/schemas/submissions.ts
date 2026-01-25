@@ -17,7 +17,9 @@ export const createSubmissionBodySchema = Type.Object({
   video_link: Type.Optional(Type.String({ format: "uri" })),
   submission_type: Type.Union([Type.Literal("new"), Type.Literal("update")]),
   existing_location_id: Type.Optional(Type.Integer({ minimum: 1 })),
-  image_urls: Type.Optional(Type.Array(Type.String({ format: "uri" }))),
+  image_urls: Type.Optional(
+    Type.Array(Type.String({ format: "uri" }), { maxItems: 5 }),
+  ),
 });
 
 // User update schema (can update most fields except status/admin_notes)
@@ -35,7 +37,9 @@ export const updateSubmissionUserBodySchema = Type.Object({
   opened_by_name: Type.Optional(Type.String()),
   opened_date: Type.Optional(Type.String()),
   video_link: Type.Optional(Type.String({ format: "uri" })),
-  image_urls: Type.Optional(Type.Array(Type.String({ format: "uri" }))),
+  image_urls: Type.Optional(
+    Type.Array(Type.String({ format: "uri" }), { maxItems: 5 }),
+  ),
 });
 
 // Admin update schema (can only update status and admin_notes)
@@ -45,7 +49,7 @@ export const updateSubmissionBodySchema = Type.Object({
       Type.Literal("pending"),
       Type.Literal("approved"),
       Type.Literal("rejected"),
-    ])
+    ]),
   ),
   admin_notes: Type.Optional(Type.String()),
 });
@@ -56,10 +60,10 @@ export const getSubmissionsQuerySchema = Type.Object({
       Type.Literal("pending"),
       Type.Literal("approved"),
       Type.Literal("rejected"),
-    ])
+    ]),
   ),
   submission_type: Type.Optional(
-    Type.Union([Type.Literal("new"), Type.Literal("update")])
+    Type.Union([Type.Literal("new"), Type.Literal("update")]),
   ),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 20 })),
   offset: Type.Optional(Type.Integer({ minimum: 0, default: 0 })),
@@ -72,10 +76,10 @@ export const adminSubmissionsQuerySchema = Type.Object({
       Type.Literal("pending"),
       Type.Literal("approved"),
       Type.Literal("rejected"),
-    ])
+    ]),
   ),
   submission_type: Type.Optional(
-    Type.Union([Type.Literal("new"), Type.Literal("update")])
+    Type.Union([Type.Literal("new"), Type.Literal("update")]),
   ),
   user_id: Type.Optional(Type.String({ format: "uuid" })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 50 })),
@@ -85,10 +89,10 @@ export const adminSubmissionsQuerySchema = Type.Object({
       Type.Literal("created_at"),
       Type.Literal("name"),
       Type.Literal("status"),
-    ])
+    ]),
   ),
   sort_order: Type.Optional(
-    Type.Union([Type.Literal("asc"), Type.Literal("desc")])
+    Type.Union([Type.Literal("asc"), Type.Literal("desc")]),
   ),
 });
 
@@ -115,7 +119,7 @@ export const reviewSubmissionBodySchema = Type.Object({
       opened_by_name: Type.Optional(Type.String()),
       opened_date: Type.Optional(Type.String()),
       video_link: Type.Optional(Type.String({ format: "uri" })),
-    })
+    }),
   ),
 });
 

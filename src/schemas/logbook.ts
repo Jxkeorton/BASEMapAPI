@@ -9,11 +9,14 @@ export const createLogbookBodySchema = Type.Object({
       Type.Literal("Antenna"),
       Type.Literal("Span"),
       Type.Literal("Earth"),
-    ])
+    ]),
   ),
   delay_seconds: Type.Optional(Type.Integer({ minimum: 0 })),
   jump_date: Type.Optional(Type.String({ format: "date" })),
   details: Type.Optional(Type.String()),
+  images: Type.Optional(
+    Type.Array(Type.String({ format: "uri" }), { maxItems: 5 }),
+  ),
 });
 
 export const updateLogbookBodySchema = Type.Object({
@@ -25,15 +28,21 @@ export const updateLogbookBodySchema = Type.Object({
       Type.Literal("Span"),
       Type.Literal("Earth"),
       Type.Null(),
-    ])
+    ]),
   ),
   delay_seconds: Type.Optional(
-    Type.Union([Type.Integer({ minimum: 0 }), Type.Null()])
+    Type.Union([Type.Integer({ minimum: 0 }), Type.Null()]),
   ),
   jump_date: Type.Optional(
-    Type.Union([Type.String({ format: "date" }), Type.Null()])
+    Type.Union([Type.String({ format: "date" }), Type.Null()]),
   ),
   details: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  images: Type.Optional(
+    Type.Union([
+      Type.Array(Type.String({ format: "uri" }), { maxItems: 5 }),
+      Type.Null(),
+    ]),
+  ),
 });
 
 export type CreateLogbookBody = Static<typeof createLogbookBodySchema>;
@@ -60,6 +69,7 @@ export const LogbookResponseData = {
           delay_seconds: { type: "integer", nullable: true },
           jump_date: { type: "string", format: "date", nullable: true },
           details: { type: "string", nullable: true },
+          images: { type: "array", items: { type: "string" } },
           created_at: { type: "string", format: "date-time" },
           updated_at: { type: "string", format: "date-time" },
         },
@@ -67,6 +77,7 @@ export const LogbookResponseData = {
           "id",
           "user_id",
           "location_name",
+          "images",
           "created_at",
           "updated_at",
         ],

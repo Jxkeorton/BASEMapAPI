@@ -5,6 +5,9 @@ export const updateProfileBodySchema = Type.Object({
   name: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
   username: Type.Optional(Type.String({ minLength: 3, maxLength: 30 })),
   jump_number: Type.Optional(Type.Number({ minimum: 0, maximum: 10000 })),
+  image_url: Type.Optional(
+    Type.Union([Type.String({ format: "uri" }), Type.Null()]),
+  ),
 });
 
 export const profileResponseDataSchema = Type.Object({
@@ -59,6 +62,7 @@ export const ProfileResponseData = {
     subscription_updated_at: { type: "string", format: "date-time" },
     created_at: { type: "string", format: "date-time" },
     updated_at: { type: "string", format: "date-time" },
+    image_url: { type: "string", nullable: true },
   },
   required: [
     "id",

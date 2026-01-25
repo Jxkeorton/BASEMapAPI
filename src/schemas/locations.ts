@@ -25,6 +25,9 @@ export const createLocationBodySchema = Type.Object({
   opened_date: Type.Optional(Type.String()),
   video_link: Type.Optional(Type.String({ format: "uri" })),
   is_hidden: Type.Optional(Type.Boolean()),
+  images: Type.Optional(
+    Type.Array(Type.String({ format: "uri" }), { maxItems: 5 }),
+  ),
 });
 
 export const updateLocationBodySchema = Type.Object({
@@ -42,6 +45,12 @@ export const updateLocationBodySchema = Type.Object({
   opened_date: Type.Optional(Type.String()),
   video_link: Type.Optional(Type.String({ format: "uri" })),
   is_hidden: Type.Optional(Type.Boolean()),
+  images: Type.Optional(
+    Type.Union([
+      Type.Array(Type.String({ format: "uri" }), { maxItems: 5 }),
+      Type.Null(),
+    ]),
+  ),
 });
 
 export const locationParamsSchema = Type.Object({
@@ -75,6 +84,7 @@ export const LocationsResponseData = {
       opened_by_name: { type: "string", nullable: true },
       opened_date: { type: "string", nullable: true },
       video_link: { type: "string", nullable: true },
+      images: { type: "array", items: { type: "string" } },
       created_at: { type: "string", format: "date-time" },
       updated_at: { type: "string", format: "date-time" },
       created_by: { type: "string", nullable: true },
@@ -85,6 +95,7 @@ export const LocationsResponseData = {
       "name",
       "latitude",
       "longitude",
+      "images",
       "created_at",
       "updated_at",
     ],
@@ -120,6 +131,7 @@ export const SavedLocationsResponseData = {
               opened_by_name: { type: "string", nullable: true },
               opened_date: { type: "string", nullable: true },
               video_link: { type: "string", nullable: true },
+              images: { type: "array", items: { type: "string" } },
               created_at: { type: "string", format: "date-time" },
               updated_at: { type: "string", format: "date-time" },
             },
@@ -128,6 +140,7 @@ export const SavedLocationsResponseData = {
               "name",
               "latitude",
               "longitude",
+              "images",
               "created_at",
               "updated_at",
             ],

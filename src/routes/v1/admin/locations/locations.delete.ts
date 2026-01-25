@@ -60,7 +60,7 @@ async function deleteLocation(
       );
     }
 
-    // Delete location
+    // Delete location (images will cascade delete automatically)
     const { error: deleteError } = await supabaseAdmin
       .from("locations")
       .delete()

@@ -15,7 +15,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
  */
 export const authenticateUser = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const authHeader = request.headers.authorization;
@@ -41,10 +41,17 @@ export const authenticateUser = async (
       });
     }
 
-    // Get user profile and role
+    // Get user profile and role with image
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("*")
+      .select(
+        `
+        *,
+        profile_images (
+          image_url
+        )
+      `,
+      )
       .eq("id", user.id)
       .single();
 
@@ -54,11 +61,25 @@ export const authenticateUser = async (
       return;
     }
 
+    // Extract image_url from the single profile_images object
+    const profileWithImage = {
+      ...profile,
+      image_url: (profile.profile_images as any)?.image_url || null,
+      profile_images: undefined,
+    };
+
     // Attach user, profile, and role to request
     const authenticatedRequest = request as AuthenticatedRequest;
     authenticatedRequest.user = user;
-    authenticatedRequest.profile = profile;
-    authenticatedRequest.userRole = profile.role;
+    authenticatedRequest.profile = profileWithImage;
+    if (
+      profile.role &&
+      (profile.role === "USER" ||
+        profile.role === "ADMIN" ||
+        profile.role === "SUPERUSER")
+    ) {
+      authenticatedRequest.userRole = profile.role as UserRole;
+    }
   } catch (error) {
     request.log.error("Authentication error:", error);
     return reply.code(500).send({

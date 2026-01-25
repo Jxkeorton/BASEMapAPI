@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { LocationsResponseData } from "../../../schemas/locations";
+import { addImagesToLocations } from "../../../services/locationImages";
 import { supabaseAdmin } from "../../../services/supabase";
 
 type LocationsQuery = {
@@ -75,10 +76,13 @@ async function prod(
       throw error;
     }
 
+    // Add images to each location
+    const locationsWithImages = await addImagesToLocations(data || []);
+
     // Return simple response
     return reply.send({
       success: true,
-      data: data || [],
+      data: locationsWithImages,
     });
   } catch (error) {
     request.log.error("Error in locations endpoint:", error);

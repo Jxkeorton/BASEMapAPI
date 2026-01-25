@@ -62,7 +62,7 @@ async function prod(
       throw new Error("Logbook entry not found");
     }
 
-    // Delete the entry
+    // Delete the entry (images will cascade delete automatically)
     const { error } = await supabaseAdmin
       .from("logbook_entries")
       .delete()

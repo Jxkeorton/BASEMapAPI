@@ -29,6 +29,7 @@ const updateProfileFastifySchema = {
             username: { type: "string", nullable: true },
             jump_number: { type: "number" },
             updated_at: { type: "string" },
+            image_url: { type: "string", nullable: true },
           },
         },
       },
@@ -82,31 +83,84 @@ async function prod(
       }
     }
 
-    // Update profile in database
-    const { data: updatedProfile, error } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", authenticatedRequest.user.id)
-      .select("id, email, name, username, jump_number, updated_at")
-      .single();
+    // Separate image_url from other profile updates
+    const { image_url, ...profileUpdates } = updates;
 
-    if (error) {
-      request.log.error("Error updating profile:", error);
-      throw error;
+    // Handle image_url update separately if provided
+    if (image_url !== undefined) {
+      if (image_url === null) {
+        // Delete profile image if null
+        await supabaseAdmin
+          .from("profile_images")
+          .delete()
+          .eq("user_id", authenticatedRequest.user.id);
+      } else {
+        // Upsert profile image
+        await supabaseAdmin.from("profile_images").upsert(
+          {
+            user_id: authenticatedRequest.user.id,
+            image_url: image_url,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id",
+          },
+        );
+      }
     }
+
+    // Update profile in database (only if there are profile fields to update)
+    let updatedProfile;
+    if (Object.keys(profileUpdates).length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          ...profileUpdates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", authenticatedRequest.user.id)
+        .select("id, email, name, username, jump_number, updated_at")
+        .single();
+
+      if (error) {
+        request.log.error("Error updating profile:", error);
+        throw error;
+      }
+      updatedProfile = data;
+    } else {
+      // If only image_url was updated, fetch current profile
+      const { data, error } = await supabaseAdmin
+        .from("profiles")
+        .select("id, email, name, username, jump_number, updated_at")
+        .eq("id", authenticatedRequest.user.id)
+        .single();
+
+      if (error) {
+        request.log.error("Error fetching profile:", error);
+        throw error;
+      }
+      updatedProfile = data;
+    }
+
+    // Fetch updated image_url to include in response
+    const { data: profileImage } = await supabaseAdmin
+      .from("profile_images")
+      .select("image_url")
+      .eq("user_id", authenticatedRequest.user.id)
+      .maybeSingle();
 
     logger.info("Profile updated", {
       userId: authenticatedRequest.user.id,
       updatedFields: Object.keys(updates),
     });
 
-    // Return simple response
+    // Return response with image_url
     return reply.send({
       success: true,
-      data: updatedProfile,
+      data: {
+        ...updatedProfile,
+        image_url: profileImage?.image_url || null,
+      },
     });
   } catch (error) {
     request.log.error("Error in profile update endpoint:", error);
