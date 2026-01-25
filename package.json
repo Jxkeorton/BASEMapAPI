@@ -37,6 +37,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unused-imports": "^4.1.4",
     "jest": "^30.0.4",
+    "supabase": "^2.72.8",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
