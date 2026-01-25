@@ -1,5 +1,8 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import { LogbookResponseData } from "../../../schemas/logbook";
 import { supabaseAdmin } from "../../../services/supabase";
 
@@ -73,7 +76,7 @@ const logbookFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Querystring: LogbookQuery }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
@@ -92,7 +95,7 @@ async function prod(
     // Apply filters
     if (query.search) {
       supabaseQuery = supabaseQuery.or(
-        `location_name.ilike.%${query.search}%,details.ilike.%${query.search}%`
+        `location_name.ilike.%${query.search}%,details.ilike.%${query.search}%`,
       );
     }
 
@@ -121,6 +124,36 @@ async function prod(
       throw error;
     }
 
+    // Fetch images for all entries
+    const entryIds = (entries || []).map((e) => e.id);
+    let imagesMap: Record<string, string[]> = {};
+
+    if (entryIds.length > 0) {
+      const { data: images, error: imagesError } = await supabaseAdmin
+        .from("logbook_images")
+        .select("logbook_entry_id, image_url, display_order")
+        .in("logbook_entry_id", entryIds)
+        .order("display_order", { ascending: true, nullsFirst: false });
+
+      if (imagesError) {
+        request.log.error("Error fetching logbook images:", imagesError);
+      } else if (images) {
+        // Group images by entry ID
+        for (const img of images) {
+          if (!imagesMap[img.logbook_entry_id]) {
+            imagesMap[img.logbook_entry_id] = [];
+          }
+          imagesMap[img.logbook_entry_id].push(img.image_url);
+        }
+      }
+    }
+
+    // Add images array to each entry
+    const entriesWithImages = (entries || []).map((entry) => ({
+      ...entry,
+      images: imagesMap[entry.id] || [],
+    }));
+
     // Get total count for pagination
     const { count: totalCount, error: countError } = await supabaseAdmin
       .from("logbook_entries")
@@ -136,7 +169,7 @@ async function prod(
     return reply.send({
       success: true,
       data: {
-        entries: entries || [],
+        entries: entriesWithImages,
         total_count: totalCount || 0,
         has_more: hasMore,
       },
