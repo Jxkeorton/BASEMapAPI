@@ -8,6 +8,11 @@ import {
   CreateLocationBody,
   createLocationBodySchema,
 } from "../../../../schemas/locations";
+import {
+  getLocationImages,
+  MAX_LOCATION_IMAGES,
+  updateLocationImages,
+} from "../../../../services/locationImages";
 import { logger } from "../../../../services/logger";
 import { supabaseAdmin } from "../../../../services/supabase";
 
@@ -26,7 +31,15 @@ async function createLocation(
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
-    const locationData = request.body;
+    const { images, ...locationData } = request.body;
+
+    // Validate max 5 images
+    if (images && images.length > MAX_LOCATION_IMAGES) {
+      return reply.code(400).send({
+        success: false,
+        error: `Maximum ${MAX_LOCATION_IMAGES} images allowed per location`,
+      });
+    }
 
     logger.info("Admin location creation", {
       adminUserId: authenticatedRequest.user.id,
@@ -51,6 +64,13 @@ async function createLocation(
       throw error;
     }
 
+    // Insert images if provided
+    let imageUrls: string[] = [];
+    if (images && images.length > 0) {
+      await updateLocationImages(newLocation.id, images);
+      imageUrls = await getLocationImages(newLocation.id);
+    }
+
     logger.info("Admin location created", {
       adminUserId: authenticatedRequest.user.id,
       locationId: newLocation.id,
@@ -60,7 +80,10 @@ async function createLocation(
     return reply.code(201).send({
       success: true,
       message: "Location created successfully",
-      data: newLocation,
+      data: {
+        ...newLocation,
+        images: imageUrls,
+      },
     });
   } catch (error) {
     request.log.error("Error in createLocation:", error);
