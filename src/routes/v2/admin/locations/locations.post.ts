@@ -8,6 +8,7 @@ import {
   CreateLocationBody,
   createLocationBodySchema,
 } from "../../../../schemas/locations";
+import { logger } from "../../../../services/logger";
 import { supabaseAdmin } from "../../../../services/supabase";
 
 const createLocationFastifySchema = {
@@ -20,12 +21,18 @@ const createLocationFastifySchema = {
 // Create new location (Admin+ only)
 async function createLocation(
   request: FastifyRequest<{ Body: CreateLocationBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const locationData = request.body;
+
+    logger.info("Admin location creation", {
+      adminUserId: authenticatedRequest.user.id,
+      locationName: locationData.name,
+      country: locationData.country,
+    });
 
     // Insert into database
     const { data: newLocation, error } = await supabaseAdmin
@@ -43,6 +50,12 @@ async function createLocation(
     if (error) {
       throw error;
     }
+
+    logger.info("Admin location created", {
+      adminUserId: authenticatedRequest.user.id,
+      locationId: newLocation.id,
+      locationName: newLocation.name,
+    });
 
     return reply.code(201).send({
       success: true,

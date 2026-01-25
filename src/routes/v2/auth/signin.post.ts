@@ -4,13 +4,16 @@ import {
   SignInResponse,
   signInFastifySchema,
 } from "../../../schemas/auth/signIn";
+import { logger } from "../../../services/logger";
 import { supabaseClient } from "../../../services/supabase";
 
 async function prod(
   request: FastifyRequest<{ Body: SignInBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { email, password } = request.body;
+
+  logger.info("User signin attempt", { email });
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
@@ -20,6 +23,11 @@ async function prod(
   if (error) {
     throw error;
   }
+
+  logger.info("User signin successful", {
+    userId: data.user.id,
+    email: data.user.email,
+  });
 
   const response: SignInResponse = {
     success: true,

@@ -1,10 +1,14 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import {
   GetSubmissionsQuery,
   SubmissionsResponseData,
   getSubmissionsQuerySchema,
 } from "../../../schemas/submissions";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const getSubmissionsFastifySchema = {
@@ -25,11 +29,16 @@ const getSubmissionsFastifySchema = {
 
 async function getUserSubmissions(
   request: FastifyRequest<{ Querystring: GetSubmissionsQuery }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const { status, submission_type, limit = 20, offset = 0 } = request.query;
+
+    logger.info("User submissions fetch", {
+      userId: authenticatedRequest.user.id,
+      filters: { status, submission_type },
+    });
 
     // Build query
     let supabaseQuery = supabaseAdmin
@@ -39,7 +48,7 @@ async function getUserSubmissions(
         *,
         location_submission_images(image_url, image_order),
         locations(name)
-      `
+      `,
       )
       .eq("user_id", authenticatedRequest.user.id)
       .order("created_at", { ascending: false })
@@ -90,6 +99,12 @@ async function getUserSubmissions(
     }));
 
     const hasMore = (count || 0) > offset + limit;
+
+    logger.info("User submissions returned", {
+      userId: authenticatedRequest.user.id,
+      count: transformedSubmissions.length,
+      totalCount: count,
+    });
 
     return reply.send({
       success: true,

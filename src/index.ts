@@ -1,9 +1,11 @@
+/* eslint-disable import/order */
+import "../instrument.mjs";
+
 import Fastify from "fastify";
 import { appConfig } from "./config";
 import { registerErrorHandler } from "./server/errorHandler";
 import { registerPlugins } from "./server/plugins";
 import { registerRoutes } from "./server/routes";
-
 
 const fastify = Fastify({
   pluginTimeout: 100000,
@@ -31,25 +33,18 @@ async function start() {
   try {
     registerErrorHandler(fastify);
     await registerPlugins(fastify);
-    
+
     // Health check
     fastify.get("/health", async () => {
       return { status: "ok", timestamp: new Date().toISOString() };
     });
-    
+
     await registerRoutes(fastify);
 
     await fastify.listen({
       host: appConfig.host,
       port: appConfig.port,
     });
-
-    fastify.log.info(
-      `🚀 Server listening on http://${appConfig.host}:${appConfig.port}`
-    );
-    fastify.log.info(
-      `📚 API Documentation available at http://${appConfig.host}:${appConfig.port}/docs`
-    );
   } catch (error) {
     fastify.log.error(error);
     process.exit(1);

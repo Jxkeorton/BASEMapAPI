@@ -1,10 +1,14 @@
 import { AuthError, User } from "@supabase/supabase-js";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import {
   DeleteAccountBody,
   deleteAccountFastifySchema,
 } from "../../../schemas/auth/delete";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 /**
@@ -13,7 +17,7 @@ import { supabaseAdmin } from "../../../services/supabase";
 async function verifyUserIdentity(
   user: User,
   password?: string,
-  method?: string
+  method?: string,
 ): Promise<{ success: boolean; error?: AuthError | Error; method?: string }> {
   try {
     // Get user's authentication identities
@@ -26,7 +30,7 @@ async function verifyUserIdentity(
 
     const userIdentities = identities.user.identities || [];
     const hasEmailPassword = userIdentities.some(
-      (identity) => identity.provider === "email"
+      (identity) => identity.provider === "email",
     );
     const hasOAuthOnly = userIdentities.length > 0 && !hasEmailPassword;
 
@@ -63,7 +67,7 @@ async function verifyUserIdentity(
       return {
         success: false,
         error: new Error(
-          "This account uses OAuth authentication (Google/Apple). Password not required."
+          "This account uses OAuth authentication (Google/Apple). Password not required.",
         ),
       };
     }
@@ -80,18 +84,20 @@ async function verifyUserIdentity(
 
 async function deleteAccount(
   request: FastifyRequest<{ Body: DeleteAccountBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const userId = authenticatedRequest.user.id;
+
+    logger.info("Account deletion initiated", { userId });
 
     const { confirmation, password, verification_method } = request.body;
 
     // Check confirmation text
     if (confirmation.toUpperCase() !== "DELETE") {
       throw new Error(
-        'Confirmation must be "DELETE" to proceed with account deletion'
+        'Confirmation must be "DELETE" to proceed with account deletion',
       );
     }
 
@@ -99,7 +105,7 @@ async function deleteAccount(
     const identityVerified = await verifyUserIdentity(
       authenticatedRequest.user,
       password,
-      verification_method
+      verification_method,
     );
 
     if (!identityVerified.success) {
@@ -131,6 +137,11 @@ async function deleteAccount(
     if (authDeleteError) {
       throw authDeleteError;
     }
+
+    logger.info("Account deletion completed", {
+      userId,
+      username: profile?.username,
+    });
 
     return reply.send({
       success: true,

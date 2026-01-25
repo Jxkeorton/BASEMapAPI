@@ -38,7 +38,7 @@ const locationsFastifySchema = {
 // Handler function
 async function prod(
   request: FastifyRequest<{ Querystring: LocationsQuery }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const query = request.query;
@@ -52,16 +52,16 @@ async function prod(
     }
 
     if (query.min_height) {
-      supabaseQuery = supabaseQuery.gte("total_height_ft", query.min_height);
+      supabaseQuery = supabaseQuery.gte("rock_drop_ft", query.min_height);
     }
 
     if (query.max_height) {
-      supabaseQuery = supabaseQuery.lte("total_height_ft", query.max_height);
+      supabaseQuery = supabaseQuery.lte("rock_drop_ft", query.max_height);
     }
 
     if (query.search) {
       supabaseQuery = supabaseQuery.or(
-        `name.ilike.%${query.search}%,country.ilike.%${query.search}%,notes.ilike.%${query.search}%`
+        `name.ilike.%${query.search}%,country.ilike.%${query.search}%,notes.ilike.%${query.search}%`,
       );
     }
 

@@ -1,9 +1,13 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import {
   UpdateSubmissionUserBody,
   updateSubmissionUserBodySchema,
 } from "../../../schemas/submissions";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const updateSubmissionFastifySchema = {
@@ -25,12 +29,18 @@ async function updateSubmission(
     Params: { id: string };
     Body: UpdateSubmissionUserBody;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const { id } = request.params;
     const updateData = request.body as Partial<UpdateSubmissionUserBody>;
+
+    logger.info("Submission update requested", {
+      userId: authenticatedRequest.user.id,
+      submissionId: id,
+      fields: Object.keys(updateData),
+    });
 
     // Check if submission exists and belongs to user and is pending
     const { error: fetchError } = await supabaseAdmin
@@ -84,7 +94,7 @@ async function updateSubmission(
       if (deleteError) {
         request.log.error(
           "⚠️ Warning: Failed to delete old images:",
-          deleteError.message
+          deleteError.message,
         );
         throw deleteError;
       }
@@ -104,18 +114,23 @@ async function updateSubmission(
         if (imageError) {
           request.log.error(
             "⚠️ Warning: Failed to save new images:",
-            imageError.message
+            imageError.message,
           );
           throw imageError;
         } else {
           request.log.info(
             "✅ Updated",
             imageRecords.length,
-            "images for submission"
+            "images for submission",
           );
         }
       }
     }
+
+    logger.info("Submission updated", {
+      userId: authenticatedRequest.user.id,
+      submissionId: id,
+    });
 
     return reply.send({
       success: true,

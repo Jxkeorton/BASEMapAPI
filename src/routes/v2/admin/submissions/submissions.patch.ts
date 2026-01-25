@@ -10,6 +10,7 @@ import {
   reviewSubmissionBodySchema,
   submissionParamsSchema,
 } from "../../../../schemas/submissions";
+import { logger } from "../../../../services/logger";
 import { supabaseAdmin } from "../../../../services/supabase";
 
 const reviewSubmissionFastifySchema = {
@@ -42,12 +43,18 @@ async function reviewSubmission(
     Params: SubmissionParams;
     Body: ReviewSubmissionBody;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
     const { submissionId } = request.params;
     const reviewData = request.body;
+
+    logger.info("Admin submission review started", {
+      adminUserId: authenticatedRequest.user.id,
+      submissionId,
+      decision: reviewData.status,
+    });
 
     // First, get the submission with all related data
     const { data: submission, error: fetchError } = await supabaseAdmin
@@ -65,7 +72,7 @@ async function reviewSubmission(
           name,
           country
         )
-      `
+      `,
       )
       .eq("id", submissionId)
       .single();
@@ -166,7 +173,7 @@ async function reviewSubmission(
           image_url,
           image_order
         )
-      `
+      `,
       )
       .single();
 
@@ -180,10 +187,18 @@ async function reviewSubmission(
             createdLocation
               ? " and location created"
               : updatedLocation
-              ? " and location updated"
-              : ""
+                ? " and location updated"
+                : ""
           }`
         : "Submission rejected";
+
+    logger.info("Admin submission review completed", {
+      adminUserId: authenticatedRequest.user.id,
+      submissionId,
+      decision: reviewData.status,
+      locationCreated: !!createdLocation,
+      locationUpdated: !!updatedLocation,
+    });
 
     return reply.send({
       success: true,

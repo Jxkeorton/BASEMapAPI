@@ -1,9 +1,13 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import {
   CreateLogbookBody,
   createLogbookBodySchema,
 } from "../../../schemas/logbook";
+import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const createLogbookEntryFastifySchema = {
@@ -36,13 +40,19 @@ const createLogbookEntryFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Body: CreateLogbookBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const { location_name, exit_type, delay_seconds, jump_date, details } =
       request.body;
+
+    logger.info("Logbook entry creation", {
+      userId: authenticatedRequest.user.id,
+      locationName: location_name,
+      exitType: exit_type,
+    });
 
     // Create the logbook entry
     const { data: newEntry, error } = await supabaseAdmin
@@ -62,6 +72,12 @@ async function prod(
       request.log.error("Error creating logbook entry:", error);
       throw error;
     }
+
+    logger.info("Logbook entry created", {
+      userId: authenticatedRequest.user.id,
+      entryId: newEntry.id,
+      locationName: location_name,
+    });
 
     return reply.code(201).send({
       success: true,

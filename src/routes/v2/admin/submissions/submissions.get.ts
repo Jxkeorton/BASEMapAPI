@@ -1,9 +1,14 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { authenticateUser, requireAdmin } from "../../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+  requireAdmin,
+} from "../../../../middleware/auth";
 import {
   AdminSubmissionsQuery,
   adminSubmissionsQuerySchema,
 } from "../../../../schemas/submissions";
+import { logger } from "../../../../services/logger";
 import { supabaseAdmin } from "../../../../services/supabase";
 
 const submissionsFastifySchema = {
@@ -39,9 +44,10 @@ const submissionsFastifySchema = {
 
 async function getSubmissions(
   request: FastifyRequest<{ Querystring: AdminSubmissionsQuery }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
+    const authenticatedRequest = request as AuthenticatedRequest;
     const {
       status,
       submission_type,
@@ -51,6 +57,11 @@ async function getSubmissions(
       sort_by = "created_at",
       sort_order = "desc",
     } = request.query;
+
+    logger.info("Admin submissions fetch", {
+      adminUserId: authenticatedRequest.user.id,
+      filters: { status, submission_type, user_id },
+    });
 
     let supabaseQuery = supabaseAdmin.from("location_submission_requests")
       .select(`
@@ -162,11 +173,17 @@ async function getSubmissions(
           }
           return acc;
         },
-        { pending: 0, approved: 0, rejected: 0 }
+        { pending: 0, approved: 0, rejected: 0 },
       );
     }
 
     const hasMore = (totalCount || 0) > offset + limit;
+
+    logger.info("Admin submissions returned", {
+      adminUserId: authenticatedRequest.user.id,
+      count: submissions?.length || 0,
+      summary,
+    });
 
     return reply.send({
       success: true,
