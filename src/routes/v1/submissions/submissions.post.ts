@@ -8,6 +8,10 @@ import {
   createSubmissionBodySchema,
 } from "../../../schemas/submissions";
 import { logger } from "../../../services/logger";
+import {
+  createSubmissionImages,
+  MAX_SUBMISSION_IMAGES,
+} from "../../../services/submissionImages";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const createSubmissionFastifySchema = {
@@ -92,6 +96,17 @@ async function createSubmission(
 
     const submissionData = request.body;
 
+    // Validate max 5 images
+    if (
+      submissionData.image_urls &&
+      submissionData.image_urls.length > MAX_SUBMISSION_IMAGES
+    ) {
+      return reply.code(400).send({
+        success: false,
+        error: `Maximum ${MAX_SUBMISSION_IMAGES} images allowed per submission`,
+      });
+    }
+
     logger.info("Submission creation started", {
       userId: authenticatedRequest.user.id,
       type: submissionData.submission_type,
@@ -156,28 +171,12 @@ async function createSubmission(
 
     // Insert images if provided
     if (submissionData.image_urls && submissionData.image_urls.length > 0) {
-      const imageRecords = submissionData.image_urls.map((url, index) => ({
-        submission_id: newSubmission.id,
-        image_url: url,
-        image_order: index,
-      }));
-
-      const { error: imageError } = await supabaseAdmin
-        .from("location_submission_images")
-        .insert(imageRecords);
-
-      if (imageError) {
-        request.log.error(
-          "⚠️ Warning: Failed to save images:",
-          imageError.message,
-        );
-        throw imageError;
-      } else {
-        request.log.info(
-          "✅ Saved",
-          imageRecords.length,
-          "images for submission",
-        );
+      const success = await createSubmissionImages(
+        newSubmission.id,
+        submissionData.image_urls,
+      );
+      if (!success) {
+        request.log.error("⚠️ Warning: Failed to save images for submission");
       }
     }
 
