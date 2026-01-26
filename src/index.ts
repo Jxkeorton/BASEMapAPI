@@ -1,5 +1,5 @@
 /* eslint-disable import/order */
-import "../instrument.mjs";
+import "./instrument.js";
 
 import Fastify from "fastify";
 import { appConfig } from "./config";
