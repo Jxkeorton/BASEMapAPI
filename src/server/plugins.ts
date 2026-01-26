@@ -54,6 +54,15 @@ export async function registerPlugins(fastify: FastifyInstance) {
         },
       },
     },
+    transform: ({ schema, url }) => {
+      // Remove /api/v1 prefix from the URL shown in docs
+      const transformedUrl = url.replace(/^\/api\/v1/, "");
+
+      return {
+        schema,
+        url: transformedUrl,
+      };
+    },
   });
 
   await fastify.register(swaggerUi, {
