@@ -6,6 +6,8 @@ import swaggerUi from "@fastify/swagger-ui";
 import { FastifyInstance } from "fastify";
 import { appConfig } from "../config";
 import { validateApiKey } from "../middleware/apiKey";
+import cloudinary from "fastify-cloudinary";
+import multipart from "@fastify/multipart";
 
 export async function registerPlugins(fastify: FastifyInstance) {
   await fastify.register(fastifyHelmet);
@@ -18,6 +20,16 @@ export async function registerPlugins(fastify: FastifyInstance) {
   await fastify.register(rateLimit, {
     max: appConfig.rateLimit.max,
     timeWindow: appConfig.rateLimit.timeWindow,
+  });
+
+  await fastify.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max
+      files: 1, // Only allow one file at a time
+    },
+  });
+  fastify.register(cloudinary, {
+    url: `cloudinary://${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}@${process.env.CLOUDINARY_CLOUD_NAME}`,
   });
 
   fastify.addHook("preHandler", async (request, reply) => {
