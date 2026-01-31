@@ -1,4 +1,8 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 
 interface CloudinaryUploadParams {
   preset: "profile" | "logbook" | "locations" | "location_submissions";
@@ -14,7 +18,7 @@ interface CloudinaryUploadResponse {
 
 const PRESET_CONFIG = {
   profile: {
-    folder: "profiles",
+    folder: "profile",
     uploadPreset: "profile_preset",
     allowedFormats: ["jpg", "jpeg", "png", "webp"],
     maxFileSize: 5 * 1024 * 1024, // 5MB
@@ -91,6 +95,7 @@ async function prod(
 ) {
   try {
     const { preset } = request.query;
+    const authenticatedRequest = request as AuthenticatedRequest;
 
     // Validate preset
     if (!PRESET_CONFIG[preset]) {
@@ -130,13 +135,21 @@ async function prod(
       });
     }
 
+    const isProfilePreset = preset === "profile";
+    const isLogbookPreset = preset === "logbook";
+    const userId = authenticatedRequest.user.id.toString();
+
     // Upload to Cloudinary using a Promise wrapper for the callback
     const uploadResult = await new Promise<any>((resolve, reject) => {
       const uploadStream = request.server.cloudinary.uploader.upload_stream(
         {
-          folder: config.folder,
+          folder:
+            isLogbookPreset || isProfilePreset
+              ? `${config.folder}/${userId}`
+              : config.folder,
           upload_preset: config.uploadPreset,
           resource_type: "image",
+          public_id: isProfilePreset ? userId : undefined,
         },
         (error: any, result: any) => {
           if (error) return reject(error);
@@ -166,6 +179,7 @@ async function prod(
 export default async function postImage(fastify: FastifyInstance) {
   fastify.post<{ Querystring: CloudinaryUploadParams }>("/image", {
     schema: imageUploadSchema,
+    preHandler: [authenticateUser],
     handler: prod,
   });
 }
