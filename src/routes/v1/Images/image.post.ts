@@ -5,46 +5,52 @@ import {
 } from "../../../middleware/auth";
 
 interface CloudinaryUploadParams {
-  preset: "profile" | "logbook" | "locations" | "location_submissions";
+  preset:
+    | "profile_images"
+    | "logbook_images"
+    | "location_images"
+    | "location_submissions";
 }
 
 interface CloudinaryUploadResponse {
   success: boolean;
-  url?: string;
-  secureUrl?: string;
-  publicId?: string;
+  uploads?: Array<{
+    url: string;
+    secureUrl: string;
+    publicId: string;
+  }>;
   error?: string;
 }
 
 const PRESET_CONFIG = {
-  profile: {
+  profile_images: {
     folder: "profile",
-    uploadPreset: "profile_preset",
+    uploadPreset: "profile_images",
     allowedFormats: ["jpg", "jpeg", "png", "webp"],
     maxFileSize: 5 * 1024 * 1024, // 5MB
   },
-  logbook: {
+  logbook_images: {
     folder: "logbook",
-    uploadPreset: "logbook_preset",
+    uploadPreset: "logbook_images",
     allowedFormats: ["jpg", "jpeg", "png", "webp"],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
-  locations: {
-    folder: "locations",
-    uploadPreset: "locations_preset",
+  location_images: {
+    folder: "location_images",
+    uploadPreset: "location_images",
     allowedFormats: ["jpg", "jpeg", "png", "webp"],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
   location_submissions: {
     folder: "location_submissions",
-    uploadPreset: "location_submissions_preset",
+    uploadPreset: "location_submissions",
     allowedFormats: ["jpg", "jpeg", "png", "webp"],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
 };
 
 const imageUploadSchema = {
-  description: "Upload an image",
+  description: "Upload one or more images",
   tags: ["images"],
   consumes: ["multipart/form-data"],
   querystring: {
@@ -53,29 +59,31 @@ const imageUploadSchema = {
     properties: {
       preset: {
         type: "string",
-        enum: ["profile", "logbook", "locations", "location_submissions"],
+        enum: [
+          "profile_images",
+          "logbook_images",
+          "location_images",
+          "location_submissions",
+        ],
       },
     },
-  },
-  body: {
-    type: "object",
-    properties: {
-      file: {
-        type: "string",
-        format: "binary",
-        description: "Image file to upload",
-      },
-    },
-    required: ["file"],
   },
   response: {
     200: {
       type: "object",
       properties: {
         success: { type: "boolean" },
-        url: { type: "string" },
-        secureUrl: { type: "string" },
-        publicId: { type: "string" },
+        uploads: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              url: { type: "string" },
+              secureUrl: { type: "string" },
+              publicId: { type: "string" },
+            },
+          },
+        },
       },
     },
     400: {
@@ -88,7 +96,6 @@ const imageUploadSchema = {
   },
 };
 
-// Handler function
 async function prod(
   request: FastifyRequest<{ Querystring: CloudinaryUploadParams }>,
   reply: FastifyReply,
@@ -107,72 +114,110 @@ async function prod(
 
     const config = PRESET_CONFIG[preset];
 
-    // Get the uploaded file
-    const data = await request.file();
+    // Get all uploaded files
+    const files = await request.saveRequestFiles();
 
-    if (!data) {
+    if (!files || files.length === 0) {
       return reply.status(400).send({
         success: false,
-        error: "No file uploaded",
+        error: "No files uploaded",
       });
     }
 
-    // Validate file type
-    const fileExtension = data.filename.split(".").pop()?.toLowerCase();
-    if (!fileExtension || !config.allowedFormats.includes(fileExtension)) {
-      return reply.status(400).send({
-        success: false,
-        error: `Invalid file format. Allowed formats: ${config.allowedFormats.join(", ")}`,
-      });
-    }
-
-    // Check file size
-    const buffer = await data.toBuffer();
-    if (buffer.length > config.maxFileSize) {
-      return reply.status(400).send({
-        success: false,
-        error: `File size exceeds maximum allowed size of ${config.maxFileSize / (1024 * 1024)}MB`,
-      });
-    }
-
-    const isProfilePreset = preset === "profile";
-    const isLogbookPreset = preset === "logbook";
+    const isProfilePreset = preset === "profile_images";
+    const isLogbookPreset = preset === "logbook_images";
     const userId = authenticatedRequest.user.id.toString();
 
-    // Upload to Cloudinary using a Promise wrapper for the callback
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      const uploadStream = request.server.cloudinary.uploader.upload_stream(
-        {
-          folder:
-            isLogbookPreset || isProfilePreset
-              ? `${config.folder}/${userId}`
-              : config.folder,
-          upload_preset: config.uploadPreset,
-          resource_type: "image",
-          public_id: isProfilePreset ? userId : undefined,
-        },
-        (error: any, result: any) => {
-          if (error) return reject(error);
-          resolve(result);
-        },
-      );
-      data.file.pipe(uploadStream);
-    });
+    // Process all files
+    const uploadResults = [];
+    const errors = [];
 
+    for (const file of files) {
+      try {
+        // Validate file type
+        const fileExtension = file.filename.split(".").pop()?.toLowerCase();
+        if (!fileExtension || !config.allowedFormats.includes(fileExtension)) {
+          errors.push(
+            `${file.filename}: Invalid file format. Allowed formats: ${config.allowedFormats.join(", ")}`,
+          );
+          continue;
+        }
+
+        // Read file buffer
+        const fs = await import("fs/promises");
+        const buffer = await fs.readFile(file.filepath);
+
+        // Check file size
+        if (buffer.length > config.maxFileSize) {
+          errors.push(
+            `${file.filename}: File size exceeds maximum allowed size of ${config.maxFileSize / (1024 * 1024)}MB`,
+          );
+          continue;
+        }
+
+        // Check if buffer is empty
+        if (buffer.length === 0) {
+          errors.push(`${file.filename}: File is empty`);
+          continue;
+        }
+
+        // Upload to Cloudinary using buffer
+        const uploadResult = await new Promise<any>((resolve, reject) => {
+          request.server.cloudinary.uploader
+            .upload_stream(
+              {
+                folder:
+                  isLogbookPreset || isProfilePreset
+                    ? `${config.folder}/${userId}`
+                    : config.folder,
+                upload_preset: config.uploadPreset,
+                resource_type: "image",
+                public_id: isProfilePreset ? userId : undefined,
+              },
+              (error: any, result: any) => {
+                if (error) return reject(error);
+                resolve(result);
+              },
+            )
+            .end(buffer);
+        });
+
+        uploadResults.push({
+          url: uploadResult.url,
+          secureUrl: uploadResult.secure_url,
+          publicId: uploadResult.public_id,
+        });
+      } catch (error) {
+        request.log.error(error);
+        errors.push(
+          `${file.filename}: Upload failed - ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+    }
+
+    // If no successful uploads, return error
+    if (uploadResults.length === 0) {
+      return reply.status(400).send({
+        success: false,
+        error: errors.length > 0 ? errors.join("; ") : "All uploads failed",
+      });
+    }
+
+    // Return successful uploads (with warnings if some failed)
     const response: CloudinaryUploadResponse = {
       success: true,
-      url: uploadResult.url,
-      secureUrl: uploadResult.secure_url,
-      publicId: uploadResult.public_id,
+      uploads: uploadResults,
     };
+
+    // Log warnings if some files failed
+    if (errors.length > 0) {
+      request.log.warn(`Some files failed to upload: ${errors.join("; ")}`);
+    }
 
     return reply.status(200).send(response);
   } catch (error) {
     request.log.error(error);
-    return reply.status(500).send({
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to upload image",
-    });
+    throw error;
   }
 }
 
