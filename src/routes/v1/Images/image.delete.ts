@@ -39,15 +39,12 @@ async function prod(
     }
   } catch (error) {
     request.log.error(error);
-    return reply.status(500).send({
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to delete image",
-    });
+    throw error;
   }
 }
 
-export async function deleteImage(fastify: FastifyInstance) {
-  fastify.delete<{ Params: { publicId: string } }>("/delete/image/:publicId", {
+export default async function deleteImage(fastify: FastifyInstance) {
+  fastify.delete<{ Params: { publicId: string } }>("/image/:publicId", {
     schema: deleteImageSchema,
     handler: prod,
   });

@@ -164,7 +164,7 @@ async function prod(
 }
 
 export default async function postImage(fastify: FastifyInstance) {
-  fastify.post<{ Querystring: CloudinaryUploadParams }>("/upload/image", {
+  fastify.post<{ Querystring: CloudinaryUploadParams }>("/image", {
     schema: imageUploadSchema,
     handler: prod,
   });
