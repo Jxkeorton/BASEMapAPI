@@ -104,13 +104,13 @@ async function prod(
 
     // Get location IDs and fetch images
     const locationIds = (savedLocations || [])
-      .map((save) => (save.locations as any)?.id)
+      .map((save) => save.locations?.id)
       .filter((id): id is number => id !== undefined);
     const imagesMap = await getLocationImagesMap(locationIds);
 
     // Transform the data to flatten the structure and add images
     const transformedLocations = (savedLocations || []).map((save) => {
-      const location = save.locations as any;
+      const location = save.locations;
       return {
         save_id: save.id,
         saved_at: save.created_at,
