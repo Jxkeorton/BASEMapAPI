@@ -42,6 +42,7 @@ const PRESET_CONFIG = {
 const imageUploadSchema = {
   description: "Upload an image",
   tags: ["images"],
+  consumes: ["multipart/form-data"],
   querystring: {
     type: "object",
     required: ["preset"],
@@ -51,6 +52,17 @@ const imageUploadSchema = {
         enum: ["profile", "logbook", "locations", "location_submissions"],
       },
     },
+  },
+  body: {
+    type: "object",
+    properties: {
+      file: {
+        type: "string",
+        format: "binary",
+        description: "Image file to upload",
+      },
+    },
+    required: ["file"],
   },
   response: {
     200: {
