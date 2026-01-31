@@ -24,8 +24,8 @@ export async function registerPlugins(fastify: FastifyInstance) {
 
   await fastify.register(multipart, {
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB max
-      files: 1, // Only allow one file at a time
+      fileSize: 10 * 1024 * 1024, // 10MB max per file
+      files: 5, // Allow up to 5 files at a time
     },
   });
   fastify.register(cloudinary, {
