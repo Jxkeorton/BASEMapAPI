@@ -10,6 +10,22 @@ const deleteImageSchema = {
       publicId: { type: "string" },
     },
   },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        message: { type: "string" },
+      },
+    },
+    400: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        error: { type: "string" },
+      },
+    },
+  },
 };
 
 // Handler function
