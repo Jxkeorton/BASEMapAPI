@@ -26,25 +26,25 @@ const PRESET_CONFIG = {
   profile_images: {
     folder: "profile",
     uploadPreset: "profile_images",
-    allowedFormats: ["jpg", "jpeg", "png", "webp"],
+    allowedFormats: ["jpg", "jpeg", "png", "webp", "heic", "heif"],
     maxFileSize: 5 * 1024 * 1024, // 5MB
   },
   logbook_images: {
     folder: "logbook",
     uploadPreset: "logbook_images",
-    allowedFormats: ["jpg", "jpeg", "png", "webp"],
+    allowedFormats: ["jpg", "jpeg", "png", "webp", "heic", "heif"],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
   location_images: {
     folder: "location_images",
     uploadPreset: "location_images",
-    allowedFormats: ["jpg", "jpeg", "png", "webp"],
+    allowedFormats: ["jpg", "jpeg", "png", "webp", "heic", "heif"],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
   location_submissions: {
     folder: "location_submissions",
     uploadPreset: "location_submissions",
-    allowedFormats: ["jpg", "jpeg", "png", "webp"],
+    allowedFormats: ["jpg", "jpeg", "png", "webp", "heic", "heif"],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
 };
@@ -106,6 +106,7 @@ async function prod(
 
     // Validate preset
     if (!PRESET_CONFIG[preset]) {
+      console.warn(`Invalid preset specified: ${preset}`);
       return reply.status(400).send({
         success: false,
         error: "Invalid preset specified",
@@ -118,6 +119,7 @@ async function prod(
     const files = await request.saveRequestFiles();
 
     if (!files || files.length === 0) {
+      console.warn("No files uploaded");
       return reply.status(400).send({
         success: false,
         error: "No files uploaded",
@@ -197,6 +199,7 @@ async function prod(
 
     // If no successful uploads, return error
     if (uploadResults.length === 0) {
+      console.warn("All file uploads failed");
       return reply.status(400).send({
         success: false,
         error: errors.length > 0 ? errors.join("; ") : "All uploads failed",
