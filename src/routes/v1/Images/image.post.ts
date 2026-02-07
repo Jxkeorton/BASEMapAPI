@@ -41,7 +41,7 @@ const PRESET_CONFIG = {
   },
   location_submissions: {
     folder: "location_submissions",
-    uploadPreset: "location_submissions_preset",
+    uploadPreset: "location_submissions",
     allowedFormats: ["jpg", "jpeg", "png", "webp", "heic", "heif"],
     maxFileSize: 10 * 1024 * 1024, // 10MB
   },
