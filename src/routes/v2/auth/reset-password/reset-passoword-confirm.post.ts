@@ -3,11 +3,11 @@ import {
   ResetPasswordConfirmBody,
   resetPasswordConfirmFastifySchema,
 } from "../../../../schemas/auth/reset-password";
-import { supabaseClient } from "../../../../services/supabase";
+import { supabaseAdmin, supabaseClient } from "../../../../services/supabase";
 
 async function prod(
   request: FastifyRequest<{ Body: ResetPasswordConfirmBody }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const { access_token, refresh_token, new_password } = request.body;
@@ -32,6 +32,18 @@ async function prod(
       throw updateError;
     }
 
+    const { error: metadataUpdateError } =
+      await supabaseAdmin.auth.admin.updateUserById(sessionData.user.id, {
+        app_metadata: {
+          ...(sessionData.user.app_metadata ?? {}),
+          force_password_reset: false,
+        },
+      });
+
+    if (metadataUpdateError) {
+      throw metadataUpdateError;
+    }
+
     // Return success response
     return reply.send({
       success: true,
@@ -44,7 +56,7 @@ async function prod(
 }
 
 export default async function ResetPasswordConfirmPost(
-  fastify: FastifyInstance
+  fastify: FastifyInstance,
 ) {
   fastify.post("/reset-password/confirm", {
     schema: resetPasswordConfirmFastifySchema,

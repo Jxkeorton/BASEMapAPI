@@ -39,8 +39,8 @@ importers:
         specifier: ^2.50.3
         version: 2.50.3
       dotenv:
-        specifier: ^17.0.1
-        version: 17.0.1
+        specifier: ^17.3.1
+        version: 17.3.1
       fastify:
         specifier: ^5.4.0
         version: 5.4.0
@@ -1419,8 +1419,8 @@ packages:
     resolution: {integrity: sha512-TLz+x/vEXm/Y7P7wn1EJFNLxYpUD4TgMosxY6fAVJUnJMbupHBOncxyWUG9OpTaH9EBD7uFI5LfEgmMOc54DsA==}
     engines: {node: '>=8'}
 
-  dotenv@17.0.1:
-    resolution: {integrity: sha512-GLjkduuAL7IMJg/ZnOPm9AnWKJ82mSE2tzXLaJ/6hD6DhwGfZaXG77oB8qbReyiczNxnbxQKyh0OE5mXq0bAHA==}
+  dotenv@17.3.1:
+    resolution: {integrity: sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==}
     engines: {node: '>=12'}
 
   eastasianwidth@0.2.0:
@@ -4179,7 +4179,7 @@ snapshots:
 
   detect-newline@3.1.0: {}
 
-  dotenv@17.0.1: {}
+  dotenv@17.3.1: {}
 
   eastasianwidth@0.2.0: {}
 
