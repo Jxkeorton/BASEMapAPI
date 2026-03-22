@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
     "build": "tsc",
     "db-start": "supabase start && ./supabase/seed.sh",
     "db-reset": "supabase db reset && ./supabase/seed.sh",
