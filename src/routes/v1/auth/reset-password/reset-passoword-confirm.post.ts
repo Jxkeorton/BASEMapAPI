@@ -10,41 +10,49 @@ async function prod(
   reply: FastifyReply,
 ) {
   try {
-    const { access_token, refresh_token, new_password } = request.body;
+    const { token_hash, type, new_password } = request.body;
 
-    // Set the session with the tokens from the reset email
-    const { data: sessionData, error: sessionError } =
-      await supabaseClient.auth.setSession({
-        access_token,
-        refresh_token,
+    if (!token_hash) {
+      return reply.code(400).send({
+        success: false,
+        error: "Missing token_hash",
       });
-
-    if (sessionError || !sessionData.user) {
-      throw sessionError;
     }
 
-    // Update the user's password
-    const { error: updateError } = await supabaseClient.auth.updateUser({
-      password: new_password,
-    });
+    const otpType = type ?? "recovery";
+
+    if (otpType !== "recovery") {
+      return reply.code(400).send({
+        success: false,
+        error: "Invalid OTP type",
+      });
+    }
+
+    const { data: verifyData, error: verifyError } =
+      await supabaseClient.auth.verifyOtp({
+        token_hash,
+        type: "recovery",
+      });
+
+    if (verifyError || !verifyData.user) {
+      throw verifyError ?? new Error("Invalid or expired reset link");
+    }
+
+    const user = verifyData.user;
+
+    const { error: updateError } =
+      await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        password: new_password,
+        app_metadata: {
+          ...(user.app_metadata ?? {}),
+          force_password_reset: false,
+        },
+      });
 
     if (updateError) {
       throw updateError;
     }
 
-    const { error: metadataUpdateError } =
-      await supabaseAdmin.auth.admin.updateUserById(sessionData.user.id, {
-        app_metadata: {
-          ...(sessionData.user.app_metadata ?? {}),
-          force_password_reset: false,
-        },
-      });
-
-    if (metadataUpdateError) {
-      throw metadataUpdateError;
-    }
-
-    // Return success response
     return reply.send({
       success: true,
       message: "Password reset successfully",

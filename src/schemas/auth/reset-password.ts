@@ -10,8 +10,8 @@ export const resetPasswordResponseSchema = Type.Object({
 });
 
 export const resetPasswordConfirmBodySchema = Type.Object({
-  access_token: Type.String(),
-  refresh_token: Type.String(),
+  token_hash: Type.String({ minLength: 1 }),
+  type: Type.Optional(Type.Literal("recovery")),
   new_password: Type.String({ minLength: 6 }),
 });
 
