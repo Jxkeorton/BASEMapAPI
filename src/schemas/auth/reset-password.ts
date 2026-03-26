@@ -18,6 +18,18 @@ export const resetPasswordConfirmBodySchema = Type.Object({
 export const resetPasswordConfirmResponseSchema = Type.Object({
   success: Type.Literal(true),
   message: Type.String(),
+  data: Type.Object({
+    user: Type.Object({
+      id: Type.String({ format: "uuid" }),
+      email: Type.String({ format: "email" }),
+      force_password_reset: Type.Boolean(),
+    }),
+    session: Type.Object({
+      access_token: Type.String(),
+      refresh_token: Type.String(),
+      expires_at: Type.Number(),
+    }),
+  }),
 });
 
 export type ResetPasswordBody = Static<typeof resetPasswordBodySchema>;
