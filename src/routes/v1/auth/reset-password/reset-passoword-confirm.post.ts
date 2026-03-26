@@ -39,6 +39,7 @@ async function prod(
     }
 
     const user = verifyData.user;
+    const session = verifyData.session;
 
     const { error: updateError } =
       await supabaseAdmin.auth.admin.updateUserById(user.id, {
@@ -56,6 +57,18 @@ async function prod(
     return reply.send({
       success: true,
       message: "Password reset successfully",
+      data: {
+        user: {
+          id: user.id,
+          email: user.email!,
+          force_password_reset: false,
+        },
+        session: {
+          access_token: session?.access_token,
+          refresh_token: session?.refresh_token,
+          expires_at: session?.expires_at,
+        },
+      },
     });
   } catch (error) {
     request.log.error("Error in reset-password-confirm endpoint:", error);
