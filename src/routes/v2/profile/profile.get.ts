@@ -1,5 +1,8 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import { ProfileResponseData } from "../../../schemas/profile";
 import { supabaseAdmin } from "../../../services/supabase";
 
@@ -30,10 +33,17 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
       });
     }
 
-    // Fallback: fetch profile if not cached
+    // Fallback: fetch profile with image if not cached
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("*")
+      .select(
+        `
+        *,
+        profile_images (
+          image_url
+        )
+      `,
+      )
       .eq("id", authenticatedRequest.user.id)
       .single();
 
@@ -45,9 +55,16 @@ async function getProfile(request: FastifyRequest, reply: FastifyReply) {
       throw new Error("Profile not found");
     }
 
+    // Extract image_url from the single profile_images object
+    const profileWithImage = {
+      ...profile,
+      image_url: (profile.profile_images as any)?.image_url || null,
+      profile_images: undefined,
+    };
+
     return reply.send({
       success: true,
-      data: profile,
+      data: profileWithImage,
     });
   } catch (error) {
     request.log.error("Error in profile endpoint:", error);

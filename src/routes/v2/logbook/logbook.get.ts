@@ -4,7 +4,6 @@ import {
   authenticateUser,
 } from "../../../middleware/auth";
 import { LogbookResponseData } from "../../../schemas/logbook";
-import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 type LogbookQuery = {
@@ -87,11 +86,6 @@ async function prod(
     const offset = query.offset ?? 0;
     const order = query.order ?? "desc";
 
-    logger.info("Logbook fetch", {
-      userId: authenticatedRequest.user.id,
-      filters: { exitType: query.exit_type, search: query.search },
-    });
-
     // Build Supabase query
     let supabaseQuery = supabaseAdmin
       .from("logbook_entries")
@@ -130,6 +124,36 @@ async function prod(
       throw error;
     }
 
+    // Fetch images for all entries
+    const entryIds = (entries || []).map((e) => e.id);
+    let imagesMap: Record<string, string[]> = {};
+
+    if (entryIds.length > 0) {
+      const { data: images, error: imagesError } = await supabaseAdmin
+        .from("logbook_images")
+        .select("logbook_entry_id, image_url, display_order")
+        .in("logbook_entry_id", entryIds)
+        .order("display_order", { ascending: true, nullsFirst: false });
+
+      if (imagesError) {
+        request.log.error("Error fetching logbook images:", imagesError);
+      } else if (images) {
+        // Group images by entry ID
+        for (const img of images) {
+          if (!imagesMap[img.logbook_entry_id]) {
+            imagesMap[img.logbook_entry_id] = [];
+          }
+          imagesMap[img.logbook_entry_id].push(img.image_url);
+        }
+      }
+    }
+
+    // Add images array to each entry
+    const entriesWithImages = (entries || []).map((entry) => ({
+      ...entry,
+      images: imagesMap[entry.id] || [],
+    }));
+
     // Get total count for pagination
     const { count: totalCount, error: countError } = await supabaseAdmin
       .from("logbook_entries")
@@ -142,16 +166,10 @@ async function prod(
 
     const hasMore = (totalCount || 0) > offset + limit;
 
-    logger.info("Logbook entries returned", {
-      userId: authenticatedRequest.user.id,
-      count: entries?.length || 0,
-      totalCount,
-    });
-
     return reply.send({
       success: true,
       data: {
-        entries: entries || [],
+        entries: entriesWithImages,
         total_count: totalCount || 0,
         has_more: hasMore,
       },

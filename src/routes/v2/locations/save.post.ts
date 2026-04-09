@@ -1,10 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import {
-  AuthenticatedRequest,
-  authenticateUser,
-} from "../../../middleware/auth";
+import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
 import { SaveLocationBody } from "../../../schemas/locations";
-import { logger } from "../../../services/logger";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const saveLocationFastifySchema = {
@@ -42,17 +38,12 @@ const saveLocationFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Body: SaveLocationBody }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
 
     const { location_id } = request.body;
-
-    logger.info("Location save requested", {
-      userId: authenticatedRequest.user.id,
-      locationId: location_id,
-    });
 
     // First, check if the location exists
     const { data: location, error: locationError } = await supabaseAdmin
@@ -96,12 +87,6 @@ async function prod(
       request.log.error("Error saving location:", error);
       throw error;
     }
-
-    logger.info("Location saved", {
-      userId: authenticatedRequest.user.id,
-      locationId: location_id,
-      locationName: location.name,
-    });
 
     return reply.send({
       success: true,

@@ -41,6 +41,14 @@ async function prod(
     const { id } = request.params;
     const updates = request.body;
 
+    // Validate max 5 images if provided
+    if (updates.images && updates.images.length > 5) {
+      return reply.code(400).send({
+        success: false,
+        error: "Maximum 5 images allowed per logbook entry",
+      });
+    }
+
     logger.info("Logbook entry update requested", {
       userId: authenticatedRequest.user.id,
       entryId: id,
@@ -63,36 +71,86 @@ async function prod(
       throw new Error("Logbook entry not found");
     }
 
+    // Separate images from other updates
+    const { images, ...entryUpdates } = updates;
+
     // Prepare update data (only include fields that are provided)
     const updateData: any = {};
-    if (updates.location_name !== undefined)
-      updateData.location_name = updates.location_name;
-    if (updates.exit_type !== undefined)
-      updateData.exit_type = updates.exit_type;
-    if (updates.delay_seconds !== undefined)
-      updateData.delay_seconds = updates.delay_seconds;
-    if (updates.jump_date !== undefined)
-      updateData.jump_date = updates.jump_date;
-    if (updates.details !== undefined) updateData.details = updates.details;
+    if (entryUpdates.location_name !== undefined)
+      updateData.location_name = entryUpdates.location_name;
+    if (entryUpdates.exit_type !== undefined)
+      updateData.exit_type = entryUpdates.exit_type;
+    if (entryUpdates.delay_seconds !== undefined)
+      updateData.delay_seconds = entryUpdates.delay_seconds;
+    if (entryUpdates.jump_date !== undefined)
+      updateData.jump_date = entryUpdates.jump_date;
+    if (entryUpdates.details !== undefined)
+      updateData.details = entryUpdates.details;
 
-    // If no fields to update, return error
-    if (Object.keys(updateData).length === 0) {
-      throw new Error("No fields provided to update");
+    // Handle images update if provided
+    if (images !== undefined) {
+      // Delete existing images
+      await supabaseAdmin
+        .from("logbook_images")
+        .delete()
+        .eq("logbook_entry_id", id);
+
+      // Insert new images if not null/empty
+      if (images && images.length > 0) {
+        const imageInserts = images.map((url, index) => ({
+          logbook_entry_id: id,
+          image_url: url,
+          display_order: index,
+        }));
+
+        const { error: imageError } = await supabaseAdmin
+          .from("logbook_images")
+          .insert(imageInserts);
+
+        if (imageError) {
+          request.log.error("Error updating logbook images:", imageError);
+        }
+      }
     }
 
-    // Update the entry
-    const { data: updatedEntry, error } = await supabaseAdmin
-      .from("logbook_entries")
-      .update(updateData)
-      .eq("id", id)
-      .eq("user_id", authenticatedRequest.user.id)
-      .select("*")
-      .single();
+    // Update the entry if there are fields to update
+    let updatedEntry;
+    if (Object.keys(updateData).length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("logbook_entries")
+        .update(updateData)
+        .eq("id", id)
+        .eq("user_id", authenticatedRequest.user.id)
+        .select("*")
+        .single();
 
-    if (error) {
-      request.log.error("Error updating logbook entry:", error);
-      throw error;
+      if (error) {
+        request.log.error("Error updating logbook entry:", error);
+        throw error;
+      }
+      updatedEntry = data;
+    } else {
+      // Fetch current entry if only images were updated
+      const { data, error } = await supabaseAdmin
+        .from("logbook_entries")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+      updatedEntry = data;
     }
+
+    // Fetch updated images
+    const { data: entryImages } = await supabaseAdmin
+      .from("logbook_images")
+      .select("image_url, display_order")
+      .eq("logbook_entry_id", id)
+      .order("display_order", { ascending: true, nullsFirst: false });
+
+    const imageUrls = (entryImages || []).map((img) => img.image_url);
 
     logger.info("Logbook entry updated", {
       userId: authenticatedRequest.user.id,
@@ -102,7 +160,10 @@ async function prod(
     return reply.send({
       success: true,
       message: "Logbook entry updated successfully",
-      data: updatedEntry,
+      data: {
+        ...updatedEntry,
+        images: imageUrls,
+      },
     });
   } catch (error) {
     request.log.error("Error in update logbook entry endpoint:", error);
