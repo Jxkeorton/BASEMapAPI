@@ -64,8 +64,7 @@ async function reviewSubmission(
         *,
         location_submission_images (
           id,
-          image_url,
-          image_order
+          image_url
         ),
         existing_location:existing_location_id (
           id,
@@ -166,12 +165,11 @@ async function reviewSubmission(
         profiles:user_id (
           id,
           email,
-          full_name
+          name
         ),
         location_submission_images (
           id,
-          image_url,
-          image_order
+          image_url
         )
       `,
       )

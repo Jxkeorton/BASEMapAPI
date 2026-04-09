@@ -14,6 +14,7 @@ export async function registerPlugins(fastify: FastifyInstance) {
 
   await fastify.register(fastifyCors, {
     origin: appConfig.api.corsOrigin,
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
     credentials: true,
   });
 

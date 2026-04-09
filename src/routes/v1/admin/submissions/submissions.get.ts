@@ -92,7 +92,7 @@ async function getSubmissions(
         profiles:user_id (
           id,
           email,
-          full_name
+          name
         ),
         existing_location:existing_location_id (
           id,
