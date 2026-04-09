@@ -129,6 +129,18 @@ async function reviewSubmission(
         }
 
         createdLocation = newLocation;
+
+        // Audit log
+        await supabaseAdmin.from("location_audit_log").insert([
+          {
+            location_id: newLocation.id,
+            action: "created",
+            performed_by: authenticatedRequest.user.id,
+            location_snapshot: newLocation,
+            source: "submission_approval",
+            submission_id: submissionId,
+          },
+        ]);
       } else if (
         submission.submission_type === "update" &&
         submission.existing_location_id
