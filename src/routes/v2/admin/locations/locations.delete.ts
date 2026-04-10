@@ -32,10 +32,10 @@ async function deleteLocation(
       locationId,
     });
 
-    // Check if location exists and get its name for logging
+    // Check if location exists and snapshot for audit log
     const { data: existingLocation, error: fetchError } = await supabaseAdmin
       .from("locations")
-      .select("id, name")
+      .select("*")
       .eq("id", locationId)
       .single();
 
@@ -69,6 +69,17 @@ async function deleteLocation(
     if (deleteError) {
       throw deleteError;
     }
+
+    // Audit log
+    await supabaseAdmin.from("location_audit_log").insert([
+      {
+        location_id: existingLocation.id,
+        action: "deleted",
+        performed_by: authenticatedRequest.user.id,
+        location_snapshot: existingLocation,
+        source: "admin",
+      },
+    ]);
 
     logger.info("Admin location deleted", {
       adminUserId: authenticatedRequest.user.id,
