@@ -1,6 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticatedRequest, authenticateUser } from "../../../middleware/auth";
+import {
+  AuthenticatedRequest,
+  authenticateUser,
+} from "../../../middleware/auth";
 import { SavedLocationsResponseData } from "../../../schemas/locations";
+import { getLocationImagesMap } from "../../../services/locationImages";
 import { supabaseAdmin } from "../../../services/supabase";
 
 type SavedLocationsQuery = {
@@ -43,7 +47,7 @@ const savedLocationsFastifySchema = {
 
 async function prod(
   request: FastifyRequest<{ Querystring: SavedLocationsQuery }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const authenticatedRequest = request as AuthenticatedRequest;
@@ -77,7 +81,7 @@ async function prod(
           created_at,
           updated_at
         )
-      `
+      `,
       )
       .eq("user_id", authenticatedRequest.user.id)
       .order("created_at", { ascending: false })
@@ -98,12 +102,26 @@ async function prod(
       request.log.warn("⚠️ Error getting total count:", countError.message);
     }
 
-    // Transform the data to flatten the structure
-    const transformedLocations = (savedLocations || []).map((save) => ({
-      save_id: save.id,
-      saved_at: save.created_at,
-      location: save.locations,
-    }));
+    // Get location IDs and fetch images
+    const locationIds = (savedLocations || [])
+      .map((save) => save.locations?.id)
+      .filter((id): id is number => id !== undefined);
+    const imagesMap = await getLocationImagesMap(locationIds);
+
+    // Transform the data to flatten the structure and add images
+    const transformedLocations = (savedLocations || []).map((save) => {
+      const location = save.locations;
+      return {
+        save_id: save.id,
+        saved_at: save.created_at,
+        location: location
+          ? {
+              ...location,
+              images: imagesMap[location.id] || [],
+            }
+          : null,
+      };
+    });
 
     const hasMore = (totalCount || 0) > offset + limit;
 

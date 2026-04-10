@@ -9,6 +9,7 @@ import {
   adminSubmissionsQuerySchema,
 } from "../../../../schemas/submissions";
 import { logger } from "../../../../services/logger";
+import { getSubmissionImagesMap } from "../../../../services/submissionImages";
 import { supabaseAdmin } from "../../../../services/supabase";
 
 const submissionsFastifySchema = {
@@ -91,17 +92,12 @@ async function getSubmissions(
         profiles:user_id (
           id,
           email,
-          full_name
+          name
         ),
         existing_location:existing_location_id (
           id,
           name,
           country
-        ),
-        location_submission_images (
-          id,
-          image_url,
-          image_order
         )
       `);
 
@@ -132,6 +128,16 @@ async function getSubmissions(
       request.log.error("Error fetching submissions:", error);
       throw error;
     }
+
+    // Fetch images for all submissions
+    const submissionIds = (submissions || []).map((s) => s.id);
+    const imagesMap = await getSubmissionImagesMap(submissionIds);
+
+    // Add images to submissions
+    const submissionsWithImages = (submissions || []).map((submission) => ({
+      ...submission,
+      images: imagesMap[submission.id] || [],
+    }));
 
     // Get total count for pagination
     let countQuery = supabaseAdmin
@@ -181,14 +187,14 @@ async function getSubmissions(
 
     logger.info("Admin submissions returned", {
       adminUserId: authenticatedRequest.user.id,
-      count: submissions?.length || 0,
+      count: submissionsWithImages.length,
       summary,
     });
 
     return reply.send({
       success: true,
       data: {
-        submissions: submissions || [],
+        submissions: submissionsWithImages,
         total_count: totalCount || 0,
         has_more: hasMore,
         summary,

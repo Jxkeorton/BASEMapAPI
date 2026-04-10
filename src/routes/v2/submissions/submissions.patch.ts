@@ -8,6 +8,11 @@ import {
   updateSubmissionUserBodySchema,
 } from "../../../schemas/submissions";
 import { logger } from "../../../services/logger";
+import {
+  getSubmissionImages,
+  MAX_SUBMISSION_IMAGES,
+  updateSubmissionImages,
+} from "../../../services/submissionImages";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const updateSubmissionFastifySchema = {
@@ -35,6 +40,17 @@ async function updateSubmission(
     const authenticatedRequest = request as AuthenticatedRequest;
     const { id } = request.params;
     const updateData = request.body as Partial<UpdateSubmissionUserBody>;
+
+    // Validate max 5 images if provided
+    if (
+      updateData.image_urls &&
+      updateData.image_urls.length > MAX_SUBMISSION_IMAGES
+    ) {
+      return reply.code(400).send({
+        success: false,
+        error: `Maximum ${MAX_SUBMISSION_IMAGES} images allowed per submission`,
+      });
+    }
 
     logger.info("Submission update requested", {
       userId: authenticatedRequest.user.id,
@@ -85,47 +101,14 @@ async function updateSubmission(
 
     // Handle image updates if provided
     if (updateData.image_urls !== undefined) {
-      // Delete existing images
-      const { error: deleteError } = await supabaseAdmin
-        .from("location_submission_images")
-        .delete()
-        .eq("submission_id", id);
-
-      if (deleteError) {
-        request.log.error(
-          "⚠️ Warning: Failed to delete old images:",
-          deleteError.message,
-        );
-        throw deleteError;
-      }
-
-      // Insert new images
-      if (updateData.image_urls.length > 0) {
-        const imageRecords = updateData.image_urls.map((url, index) => ({
-          submission_id: id,
-          image_url: url,
-          image_order: index,
-        }));
-
-        const { error: imageError } = await supabaseAdmin
-          .from("location_submission_images")
-          .insert(imageRecords);
-
-        if (imageError) {
-          request.log.error(
-            "⚠️ Warning: Failed to save new images:",
-            imageError.message,
-          );
-          throw imageError;
-        } else {
-          request.log.info(
-            "✅ Updated",
-            imageRecords.length,
-            "images for submission",
-          );
-        }
+      const success = await updateSubmissionImages(id, updateData.image_urls);
+      if (!success) {
+        request.log.error("⚠️ Warning: Failed to update images for submission");
       }
     }
+
+    // Fetch updated images for response
+    const images = await getSubmissionImages(id);
 
     logger.info("Submission updated", {
       userId: authenticatedRequest.user.id,
@@ -135,7 +118,10 @@ async function updateSubmission(
     return reply.send({
       success: true,
       message: "Submission updated successfully",
-      data: updatedSubmission,
+      data: {
+        ...updatedSubmission,
+        images,
+      },
     });
   } catch (error) {
     request.log.error("Error in updateSubmission:", error);

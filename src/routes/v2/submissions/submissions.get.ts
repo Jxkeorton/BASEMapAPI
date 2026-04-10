@@ -9,6 +9,7 @@ import {
   getSubmissionsQuerySchema,
 } from "../../../schemas/submissions";
 import { logger } from "../../../services/logger";
+import { getSubmissionImagesMap } from "../../../services/submissionImages";
 import { supabaseAdmin } from "../../../services/supabase";
 
 const getSubmissionsFastifySchema = {
@@ -46,7 +47,6 @@ async function getUserSubmissions(
       .select(
         `
         *,
-        location_submission_images(image_url, image_order),
         locations(name)
       `,
       )
@@ -69,6 +69,10 @@ async function getUserSubmissions(
       throw error;
     }
 
+    // Fetch images for all submissions
+    const submissionIds = (submissions || []).map((s) => s.id);
+    const imagesMap = await getSubmissionImagesMap(submissionIds);
+
     // Get total count for pagination
     let countQuery = supabaseAdmin
       .from("location_submission_requests")
@@ -86,15 +90,12 @@ async function getUserSubmissions(
       throw error;
     }
 
-    // Transform data to flatten structure and sort images
+    // Transform data to flatten structure and add images
     const transformedSubmissions = (submissions || []).map((submission) => ({
       ...submission,
-      images: (submission.location_submission_images || [])
-        .sort((a: any, b: any) => a.image_order - b.image_order)
-        .map((img: any) => img.image_url),
+      images: imagesMap[submission.id] || [],
       existing_location_name: submission.locations?.name || null,
       // Remove the nested objects from response
-      location_submission_images: undefined,
       locations: undefined,
     }));
 
