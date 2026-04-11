@@ -58,10 +58,10 @@ async function updateLocation(
       throw new Error("No update data provided");
     }
 
-    // Check if location exists
+    // Check if location exists and capture pre-update snapshot
     const { data: existingLocation, error: fetchError } = await supabaseAdmin
       .from("locations")
-      .select("id, name")
+      .select("*")
       .eq("id", locationId)
       .single();
 
@@ -107,6 +107,28 @@ async function updateLocation(
 
     // Fetch updated images
     const imageUrls = await getLocationImages(locationId);
+
+    // Audit log
+    const changedFields = Object.keys(request.body);
+    const { error: auditError } = await supabaseAdmin
+      .from("location_audit_log")
+      .insert([
+        {
+          location_id: locationId,
+          action: "updated",
+          performed_by: authenticatedRequest.user.id,
+          location_snapshot: existingLocation,
+          source: "admin",
+          notes: `Updated fields: ${changedFields.join(", ")}`,
+        },
+      ]);
+
+    if (auditError) {
+      logger.error("Failed to write audit log for location update", {
+        locationId,
+        error: auditError,
+      });
+    }
 
     logger.info("Admin location updated", {
       adminUserId: authenticatedRequest.user.id,
