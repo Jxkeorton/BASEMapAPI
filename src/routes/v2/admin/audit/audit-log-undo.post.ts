@@ -123,6 +123,54 @@ async function undoAuditEntry(
           notes: `Deleted via undo of audit entry ${entryId}`,
         },
       ]);
+    } else if (entry.action === "updated") {
+      // Undo update = restore the pre-update snapshot
+      const locationId = snapshot.id as number;
+
+      // Verify the location still exists
+      const { data: existing, error: existError } = await supabaseAdmin
+        .from("locations")
+        .select("*")
+        .eq("id", locationId)
+        .single();
+
+      if (existError || !existing) {
+        return reply.code(400).send({
+          success: false,
+          error: "Location no longer exists, cannot undo update",
+        });
+      }
+
+      // Restore the pre-update values from the snapshot
+      const { id, created_at, updated_at, ...restoreData } = snapshot;
+
+      const { data: restored, error: updateError } = await supabaseAdmin
+        .from("locations")
+        .update({
+          ...restoreData,
+          updated_by: authenticatedRequest.user.id,
+        } as Database["public"]["Tables"]["locations"]["Update"])
+        .eq("id", locationId)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      result = restored;
+
+      // Log the revert as a new "updated" audit entry
+      await supabaseAdmin.from("location_audit_log").insert([
+        {
+          location_id: locationId,
+          action: "updated",
+          performed_by: authenticatedRequest.user.id,
+          location_snapshot: existing,
+          source: "admin",
+          notes: `Reverted via undo of audit entry ${entryId}`,
+        },
+      ]);
     }
 
     // Mark the original entry as undone

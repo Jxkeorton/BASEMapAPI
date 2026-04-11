@@ -10,7 +10,11 @@ import { supabaseAdmin } from "../../../../services/supabase";
 
 const auditLogQuerySchema = Type.Object({
   action: Type.Optional(
-    Type.Union([Type.Literal("created"), Type.Literal("deleted")]),
+    Type.Union([
+      Type.Literal("created"),
+      Type.Literal("updated"),
+      Type.Literal("deleted"),
+    ]),
   ),
   location_id: Type.Optional(Type.Integer()),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 50 })),
